@@ -1,11 +1,11 @@
-// src/pages/Dashboard/Dashboard.tsx
+// src/pages/Dashboard/Dashboard.tsx (bagian import)
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/organisms/Sidebar/Sidebar';
 import DashboardLayout from '../../components/templates/DashboardLayout/DashboardLayout';
+import DataPekerjaan from '../DataPekerjaan/DataPekerjaan';
 import authService from '../../utils/dummyAuth';
 import { setAuthHeader } from '../../middleware/authMiddleware';
-
 // Define menu items with icons (icons are now handled in MenuItem component)
 const menuItems = [
   { id: 'home', label: 'Home' },
@@ -107,6 +107,8 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         );
+        case 'data-pekerjaan':
+          return <DataPekerjaan />;
       default:
         return (
           <div className="bg-white rounded-lg shadow-sm p-6 animate-fade-in">

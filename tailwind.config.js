@@ -111,12 +111,17 @@ export default {
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
+        'shrink': 'shrink linear forwards'
       },
       keyframes: {
         fadeIn: {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
+        shrink: {
+          'from': { width: '100%' },
+          'to': { width: '0%' }
+        }
       },
     },
   },
