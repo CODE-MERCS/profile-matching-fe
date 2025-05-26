@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom components for profile matching */
+@layer components {
+  /* Profile matching specific styles */
+  .profile-card {
+    @apply bg-white rounded-lg shadow p-6 border border-neutral-200;
+  }
+  
+  .match-high {
+    @apply text-success-700 bg-green-50 px-2 py-1 rounded-full;
+  }
+  
+  .match-medium {
+    @apply text-warning-700 bg-amber-50 px-2 py-1 rounded-full;
+  }
+  
+  .match-low {
+    @apply text-danger-700 bg-red-50 px-2 py-1 rounded-full;
+  }
+  
+  .skill-tag {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-800 mr-2 mb-2;
+  }
+  
+  .btn-primary {
+    @apply px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply px-4 py-2 bg-white text-primary-700 border border-primary-600 rounded-md hover:bg-primary-50 transition-colors;
+  }
+}
