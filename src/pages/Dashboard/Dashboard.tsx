@@ -1,26 +1,59 @@
-import React, { useEffect, useState } from 'react';
+// src/pages/Dashboard/Dashboard.tsx
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Button from '../../components/atoms/Button/Button';
-// import authService from '../../services/auth/authService';
-import { setAuthHeader } from '../../middleware/authMiddleware';
+import Sidebar from '../../components/organisms/Sidebar/Sidebar';
+import DashboardLayout from '../../components/templates/DashboardLayout/DashboardLayout';
 import authService from '../../utils/dummyAuth';
+import { setAuthHeader } from '../../middleware/authMiddleware';
 
-interface User {
-  id?: string;
-  name?: string;
-  email?: string;
-  role?: string;
-}
+// Define menu items with icons (icons are now handled in MenuItem component)
+const menuItems = [
+  { id: 'home', label: 'Home' },
+  { id: 'data-pekerjaan', label: 'Data Pekerjaan' },
+  { id: 'data-pelamar', label: 'Data Pelamar' },
+  { id: 'data-kriteria', label: 'Data Kriteria Penilaian' },
+  { id: 'data-subkriteria', label: 'Data Subkriteria' },
+  { id: 'proses-matching', label: 'Proses Profile Matching' },
+  { id: 'hasil-perhitungan', label: 'Hasil Perhitungan' },
+  { id: 'ganti-password', label: 'Ganti Password' },
+];
+
+// Dashboard stats for home page
+const dashboardStats = [
+  { id: 'pelamar', label: 'Data Pelamar', value: 24, description: 'Total pelamar terdaftar', color: 'primary' },
+  { id: 'matching', label: 'Proses Matching', value: 12, description: 'Pelamar telah diproses', color: 'green' },
+  { id: 'lowongan', label: 'Lowongan', value: 5, description: 'Posisi pekerjaan tersedia', color: 'amber' },
+];
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [user, setUser] = useState<User>({});
+  const [activeMenuItem, setActiveMenuItem] = useState('home');
+  const [user, setUser] = useState({ name: 'Admin', role: 'Administrator' });
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
+  // Toggle sidebar visibility (for mobile)
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+  
+  // Close sidebar when menu item is clicked (on mobile)
+  const handleMenuClick = (id: string) => {
+    setActiveMenuItem(id);
+    if (window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+  };
+  
+  // Get user data from localStorage if available
   useEffect(() => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
       try {
-        setUser(JSON.parse(userStr));
+        const userData = JSON.parse(userStr);
+        setUser({
+          name: userData.name || 'Admin',
+          role: userData.role || 'Administrator'
+        });
       } catch (e) {
         console.error('Failed to parse user data', e);
       }
@@ -33,55 +66,84 @@ const Dashboard: React.FC = () => {
     navigate('/');
   };
   
+  // Get current page title based on active menu
+  const getCurrentTitle = () => {
+    const menuItem = menuItems.find(item => item.id === activeMenuItem);
+    return menuItem ? menuItem.label : 'Dashboard';
+  };
+  
+  // Render appropriate content based on active menu
+  const renderContent = () => {
+    switch (activeMenuItem) {
+      case 'home':
+        return (
+          <div className="bg-white rounded-lg shadow-sm p-6 md:p-8 animate-fade-in">
+            <div className="relative">
+              <div className="absolute inset-0 bg-contain bg-right-top bg-no-repeat opacity-10" 
+                   style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'600\' height=\'600\' viewBox=\'0 0 600 600\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg transform=\'translate(300,300)\'%3E%3Cpath d=\'M153,-230.8C204,-205.3,254.8,-179.5,268.7,-139C282.5,-98.6,259.4,-43.4,247.3,8.4C235.3,60.2,234.3,108.5,213.6,148.8C192.9,189.1,152.4,221.2,107.5,233.4C62.6,245.6,13.2,237.8,-30.3,221.6C-73.8,205.4,-111.4,180.8,-149.8,153.1C-188.2,125.4,-227.4,94.7,-245.8,54.2C-264.3,13.7,-262,-36.6,-242.2,-77.7C-222.3,-118.9,-184.8,-150.9,-143.3,-179.9C-101.7,-208.9,-56.1,-234.9,-5.8,-227.2C44.5,-219.5,102,-256.3,153,-230.8Z\' fill=\'%234299e1\' /%3E%3C/g%3E%3C/svg%3E")' }}></div>
+              <h2 className="text-xl md:text-2xl font-bold text-neutral-800 mb-2 md:mb-4 relative z-10">
+                Selamat Datang di Aplikasi SPK Penerimaan Karyawan Baru
+              </h2>
+              <h3 className="text-lg md:text-xl text-neutral-600 mb-4 md:mb-6 relative z-10">dengan Metode Profile Matching</h3>
+              
+              <div className="mt-6 md:mt-8 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 relative z-10">
+                {dashboardStats.map((stat) => (
+                  <div key={stat.id} className={`bg-${stat.color}-50 rounded-lg p-4 md:p-6 border border-${stat.color}-100 transition-all hover:shadow-md`}>
+                    <div className={`text-${stat.color}-700 text-base md:text-lg font-medium mb-2`}>{stat.label}</div>
+                    <div className={`text-2xl md:text-3xl font-bold text-${stat.color}-800`}>{stat.value}</div>
+                    <div className={`text-${stat.color}-600 text-xs md:text-sm mt-2`}>{stat.description}</div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="mt-6 md:mt-8 p-4 md:p-6 bg-neutral-50 rounded-lg border border-neutral-200 relative z-10">
+                <h3 className="font-medium text-neutral-800 mb-2 md:mb-3">Tentang Aplikasi</h3>
+                <p className="text-neutral-600 text-sm md:text-base">
+                  Sistem Pendukung Keputusan (SPK) Penerimaan Karyawan Baru ini menggunakan metode Profile Matching 
+                  untuk membantu proses seleksi karyawan. Metode ini membandingkan antara profil pelamar dengan 
+                  profil jabatan yang dibutuhkan sehingga dapat memperoleh informasi mengenai perbedaan kompetensinya.
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+      default:
+        return (
+          <div className="bg-white rounded-lg shadow-sm p-6 animate-fade-in">
+            <div className="flex items-center justify-center h-64 border-2 border-dashed border-neutral-200 rounded-lg">
+              <div className="text-center">
+                <h3 className="text-lg font-medium text-neutral-700 mb-2">
+                  Konten {getCurrentTitle()}
+                </h3>
+                <p className="text-neutral-500">
+                  Halaman ini sedang dalam pengembangan.
+                </p>
+              </div>
+            </div>
+          </div>
+        );
+    }
+  };
+  
   return (
-    <div className="min-h-screen bg-neutral-50 p-4">
-      <div className="max-w-6xl mx-auto">
-        <header className="bg-white shadow-sm rounded-lg p-4 mb-6 flex justify-between items-center">
-          <div className="flex items-center">
-            <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center mr-3">
-              <span className="text-white text-sm font-bold">PM</span>
-            </div>
-            <h1 className="text-xl font-bold text-neutral-900">Profile Matching System</h1>
-          </div>
-          <Button variant="outline" onClick={handleLogout}>Logout</Button>
-        </header>
-        
-        <div className="bg-white shadow-sm rounded-lg p-6 mb-6">
-          <div className="flex items-center mb-4">
-            <div className="w-16 h-16 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center mr-4">
-              <span className="text-xl font-bold">
-                {user.name ? user.name.charAt(0).toUpperCase() : 'U'}
-              </span>
-            </div>
-            <div>
-              <h2 className="text-lg font-medium text-neutral-900">{user.name || 'User'}</h2>
-              <p className="text-neutral-600">{user.email || 'No email available'}</p>
-              <p className="text-sm text-primary-600 mt-1">{user.role || 'User'}</p>
-            </div>
-          </div>
-          
-          <div className="p-4 bg-primary-50 rounded-lg">
-            <p className="text-primary-800">
-              Welcome to the Profile Matching Dashboard. From here you can manage profiles, view matches, and more.
-            </p>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white shadow-sm rounded-lg p-4">
-            <h3 className="font-medium text-neutral-900 mb-2">Recent Matches</h3>
-            <p className="text-neutral-600 text-sm">No recent matches found.</p>
-          </div>
-          <div className="bg-white shadow-sm rounded-lg p-4">
-            <h3 className="font-medium text-neutral-900 mb-2">Your Profile</h3>
-            <p className="text-neutral-600 text-sm">Complete your profile to improve matching.</p>
-          </div>
-          <div className="bg-white shadow-sm rounded-lg p-4">
-            <h3 className="font-medium text-neutral-900 mb-2">Activity</h3>
-            <p className="text-neutral-600 text-sm">No recent activity.</p>
-          </div>
-        </div>
-      </div>
+    <div className="flex h-screen bg-neutral-100 overflow-hidden">
+      <Sidebar
+        items={menuItems}
+        activeItemId={activeMenuItem}
+        onItemClick={handleMenuClick}
+        onLogout={handleLogout}
+        isOpen={sidebarOpen}
+        onToggle={toggleSidebar}
+      />
+      
+      <DashboardLayout
+        title={getCurrentTitle()}
+        userName={user.name}
+        userRole={user.role}
+        onMenuToggle={toggleSidebar}
+      >
+        {renderContent()}
+      </DashboardLayout>
     </div>
   );
 };

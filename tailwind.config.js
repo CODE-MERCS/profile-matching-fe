@@ -4,6 +4,12 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
+  safelist: [
+    // Ensure these dynamic color classes are included
+    'bg-primary-50', 'bg-primary-100', 'text-primary-600', 'text-primary-700', 'text-primary-800', 'border-primary-100',
+    'bg-green-50', 'bg-green-100', 'text-green-600', 'text-green-700', 'text-green-800', 'border-green-100',
+    'bg-amber-50', 'bg-amber-100', 'text-amber-600', 'text-amber-700', 'text-amber-800', 'border-amber-100',
+  ],
   theme: {
     extend: {
       colors: {
@@ -100,8 +106,17 @@ export default {
         'profile': '0.75rem', // Custom border radius for profile cards
       },
       boxShadow: {
-        'profile': '0 4px 6px -1px rgba(37, 99, 235, 0.1), 0 2px 4px -1px rgba(37, 99, 235, 0.06)',
-        'card': '0 10px 15px -3px rgba(37, 99, 235, 0.1), 0 4px 6px -2px rgba(37, 99, 235, 0.05)',
+        'menu': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+        'card': '0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.025)',
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.3s ease-out',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
       },
     },
   },
