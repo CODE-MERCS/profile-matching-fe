@@ -7,6 +7,7 @@ import DataPekerjaan from '../DataPekerjaan/DataPekerjaan';
 import DataPelamar from '../DataPelamar/DataPelamar';
 import authService from '../../utils/dummyAuth';
 import { setAuthHeader } from '../../middleware/authMiddleware';
+import GantiPassword from '../GantiPassword/GantiPassword';
 // Define menu items with icons (icons are now handled in MenuItem component)
 const menuItems = [
   { id: 'home', label: 'Home' },
@@ -112,6 +113,8 @@ const Dashboard: React.FC = () => {
           return <DataPekerjaan />;
         case 'data-pelamar':
           return <DataPelamar />;
+        case 'ganti-password':
+          return <GantiPassword />;
       default:
         return (
           <div className="bg-white rounded-lg shadow-sm p-6 animate-fade-in">
