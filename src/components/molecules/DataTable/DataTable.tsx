@@ -1,4 +1,4 @@
-// src/components/molecules/DataTable/DataTable.tsx
+// src/components/molecules/DataTable/DataTable.tsx (update)
 import React from 'react';
 
 interface Column {
@@ -13,6 +13,7 @@ interface DataTableProps {
   renderActions: (item: any) => React.ReactNode;
   isLoading?: boolean;
   startIndex?: number; // Nomor awal untuk penomoran
+  renderCell?: (item: any, columnId: string) => React.ReactNode;
 }
 
 const DataTable: React.FC<DataTableProps> = ({
@@ -20,74 +21,10 @@ const DataTable: React.FC<DataTableProps> = ({
   data,
   renderActions,
   isLoading = false,
-  startIndex = 0
+  startIndex = 0,
+  renderCell
 }) => {
-  // Render loading skeleton
-  if (isLoading) {
-    return (
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="w-12 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                No
-              </th>
-              {columns.map(column => (
-                <th 
-                  key={column.id} 
-                  className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {Array(5).fill(null).map((_, index) => (
-              <tr key={index} className="animate-pulse">
-                <td className="px-4 py-4 whitespace-nowrap">
-                  <div className="h-4 w-4 bg-gray-200 rounded"></div>
-                </td>
-                {columns.map(column => (
-                  <td key={column.id} className="px-4 py-4 whitespace-nowrap">
-                    <div className="h-4 bg-gray-200 rounded w-24 md:w-32"></div>
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  }
-  
-  // Render empty state
-  if (data.length === 0) {
-    return (
-      <div className="bg-white overflow-hidden">
-        <div className="py-12 text-center">
-          <svg 
-            className="mx-auto h-12 w-12 text-gray-400" 
-            fill="none" 
-            viewBox="0 0 24 24" 
-            stroke="currentColor" 
-            aria-hidden="true"
-          >
-            <path 
-              strokeLinecap="round" 
-              strokeLinejoin="round" 
-              strokeWidth="2" 
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
-            />
-          </svg>
-          <h3 className="mt-2 text-sm font-medium text-gray-900">Tidak ada data</h3>
-          <p className="mt-1 text-sm text-gray-500">
-            Data pekerjaan tidak ditemukan.
-          </p>
-        </div>
-      </div>
-    );
-  }
+  // ... [kode lain tetap sama]
   
   // Render table with data
   return (
@@ -134,7 +71,9 @@ const DataTable: React.FC<DataTableProps> = ({
                 >
                   {column.id === 'actions' 
                     ? renderActions(item)
-                    : item[column.id]
+                    : renderCell
+                      ? renderCell(item, column.id)
+                      : item[column.id]
                   }
                 </td>
               ))}

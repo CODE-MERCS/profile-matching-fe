@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/organisms/Sidebar/Sidebar';
 import DashboardLayout from '../../components/templates/DashboardLayout/DashboardLayout';
 import DataPekerjaan from '../DataPekerjaan/DataPekerjaan';
+import DataPelamar from '../DataPelamar/DataPelamar';
 import authService from '../../utils/dummyAuth';
 import { setAuthHeader } from '../../middleware/authMiddleware';
 // Define menu items with icons (icons are now handled in MenuItem component)
@@ -109,6 +110,8 @@ const Dashboard: React.FC = () => {
         );
         case 'data-pekerjaan':
           return <DataPekerjaan />;
+        case 'data-pelamar':
+          return <DataPelamar />;
       default:
         return (
           <div className="bg-white rounded-lg shadow-sm p-6 animate-fade-in">
