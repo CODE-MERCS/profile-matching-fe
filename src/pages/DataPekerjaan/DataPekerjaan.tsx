@@ -10,9 +10,8 @@ import DeleteConfirmation from '../../components/molecules/DeleteConfirmation/De
 import Toast from '../../components/atoms/Toast/Toast';
 
 interface Pekerjaan {
-  id: string;
-  name: string;
-  description?: string;
+  id_pekerjaan: number;
+  namapekerjaan: string;
 }
 
 const DataPekerjaan: React.FC = () => {
@@ -39,8 +38,8 @@ const DataPekerjaan: React.FC = () => {
       sortable: true 
     },
     { 
-      id: 'name', 
-      label: 'PEKERJAAN', 
+      id: 'namapekerjaan', 
+      label: 'NAMA PEKERJAAN', 
       sortable: true 
     },
     { 
@@ -53,38 +52,33 @@ const DataPekerjaan: React.FC = () => {
   // Options untuk dropdown
   const entriesOptions = [10, 25, 50, 100];
   
-  // Mock data loading - Ganti dengan API call sebenarnya
+  // Fetch data dari API
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Simulasi API call dengan timeout
-        await new Promise(resolve => setTimeout(resolve, 800));
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const response = await fetch(`${baseUrl}/pekerjaan`, {
+          headers: {
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        });
         
-        // Mock data
-        const mockData = Array(500).fill(null).map((_, index) => ({
-          id: `PK-${String(index + 1).padStart(3, '0')}`,
-          name: [
-            'UI/UX Designer', 
-            'Web Developer', 
-            'Data Analyst', 
-            'HR Manager', 
-            'Project Manager', 
-            'Digital Marketing', 
-            'Content Writer'
-          ][Math.floor(Math.random() * 7)],
-          description: `Deskripsi untuk posisi ${index + 1}`
-        }));
-        
-        setPekerjaan(mockData);
-        setTotalEntries(mockData.length);
-        setIsLoading(false);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        setPekerjaan(data.data || []);
+        setTotalEntries(data.data?.length || 0);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error details:', error);
         setToastMessage({
           type: 'error',
-          message: 'Gagal memuat data pekerjaan.'
+          message: error instanceof Error ? error.message : 'Gagal memuat data pekerjaan.'
         });
+      } finally {
         setIsLoading(false);
       }
     };
@@ -101,8 +95,8 @@ const DataPekerjaan: React.FC = () => {
       }
       
       const filtered = pekerjaan.filter(item => 
-        item.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        item.name.toLowerCase().includes(searchTerm.toLowerCase())
+        item.id_pekerjaan.toString().includes(searchTerm.toLowerCase()) || 
+        item.namapekerjaan.toLowerCase().includes(searchTerm.toLowerCase())
       );
       
       setFilteredData(filtered);
@@ -133,8 +127,8 @@ const DataPekerjaan: React.FC = () => {
     setCurrentPage(page);
   };
   
-  const handleEntriesPerPageChange = (value: number) => {
-    setEntriesPerPage(value);
+  const handleEntriesPerPageChange = (value: string | number) => {
+    setEntriesPerPage(Number(value));
     setCurrentPage(1); // Reset ke halaman pertama
   };
   
@@ -155,34 +149,54 @@ const DataPekerjaan: React.FC = () => {
   
   const handleSubmitForm = async (data: Pekerjaan) => {
     try {
-      // Simulasi API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const url = currentPekerjaan 
+        ? `${baseUrl}/pekerjaan/${data.id_pekerjaan}`
+        : `${baseUrl}/pekerjaan`;
+      
+      const method = currentPekerjaan ? 'PUT' : 'POST';
+      
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          namapekerjaan: data.namapekerjaan.trim()
+        })
+      });
+
+      if (!response.ok) {
+        const result = await response.json();
+        throw new Error(result.message || 'Gagal menyimpan data pekerjaan');
+      }
+      
+      const result = await response.json();
       
       if (currentPekerjaan) {
-        // Update existing
         setPekerjaan(prev => 
-          prev.map(item => item.id === data.id ? data : item)
+          prev.map(item => item.id_pekerjaan === data.id_pekerjaan ? result.data : item)
         );
         setToastMessage({
           type: 'success',
-          message: `Pekerjaan "${data.name}" berhasil diperbarui.`
+          message: `Pekerjaan "${data.namapekerjaan}" berhasil diperbarui.`
         });
       } else {
-        // Add new
-        setPekerjaan(prev => [...prev, data]);
+        setPekerjaan(prev => [...prev, result.data]);
         setTotalEntries(prev => prev + 1);
         setToastMessage({
           type: 'success',
-          message: `Pekerjaan "${data.name}" berhasil ditambahkan.`
+          message: `Pekerjaan "${data.namapekerjaan}" berhasil ditambahkan.`
         });
       }
       
       setIsFormModalOpen(false);
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('Error details:', error);
       setToastMessage({
         type: 'error',
-        message: 'Terjadi kesalahan. Silakan coba lagi.'
+        message: error instanceof Error ? error.message : 'Terjadi kesalahan. Silakan coba lagi.'
       });
     }
   };
@@ -191,35 +205,38 @@ const DataPekerjaan: React.FC = () => {
     if (!currentPekerjaan) return;
     
     try {
-      // Simulasi API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const url = `${baseUrl}/pekerjaan/${currentPekerjaan.id_pekerjaan}`;
+      
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Gagal menghapus data pekerjaan');
+      }
       
       setPekerjaan(prev => 
-        prev.filter(item => item.id !== currentPekerjaan.id)
+        prev.filter(item => item.id_pekerjaan !== currentPekerjaan.id_pekerjaan)
       );
       setTotalEntries(prev => prev - 1);
       
       setToastMessage({
         type: 'success',
-        message: `Pekerjaan "${currentPekerjaan.name}" berhasil dihapus.`
+        message: `Pekerjaan "${currentPekerjaan.namapekerjaan}" berhasil dihapus.`
       });
       
       setIsDeleteModalOpen(false);
     } catch (error) {
-      console.error('Error deleting item:', error);
+      console.error('Error details:', error);
       setToastMessage({
         type: 'error',
-        message: 'Gagal menghapus data. Silakan coba lagi.'
+        message: error instanceof Error ? error.message : 'Gagal menghapus data. Silakan coba lagi.'
       });
     }
-  };
-  
-  const handleExport = () => {
-    // Implementasi export data ke Excel/CSV
-    setToastMessage({
-      type: 'success',
-      message: 'Data berhasil diekspor.'
-    });
   };
   
   // Render row actions
@@ -261,18 +278,6 @@ const DataPekerjaan: React.FC = () => {
             }
           >
             Tambah Data
-          </Button>
-          
-          <Button 
-            variant="secondary" 
-            onClick={handleExport}
-            icon={
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-              </svg>
-            }
-          >
-            Export
           </Button>
         </div>
         
@@ -373,7 +378,7 @@ const DataPekerjaan: React.FC = () => {
       <Modal
         isOpen={isFormModalOpen}
         onClose={() => setIsFormModalOpen(false)}
-        title={currentPekerjaan ? "Edit Data Pekerjaan" : "Tambah Data Pekerjaan"}
+        title={currentPekerjaan ? 'Edit Pekerjaan' : 'Tambah Pekerjaan'}
       >
         <PekerjaanForm
           initialData={currentPekerjaan}
@@ -389,7 +394,7 @@ const DataPekerjaan: React.FC = () => {
         title="Konfirmasi Hapus"
       >
         <DeleteConfirmation
-          itemName={currentPekerjaan?.name || ''}
+          itemName={currentPekerjaan?.namapekerjaan || ''}
           onConfirm={handleDelete}
           onCancel={() => setIsDeleteModalOpen(false)}
         />
