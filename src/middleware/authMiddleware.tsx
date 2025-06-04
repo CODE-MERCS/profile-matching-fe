@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import authService from '../services/auth/authService';
+import { authService } from '../services/authService';
 
 // Protected route middleware
 export const ProtectedRoute = () => {
@@ -22,10 +22,8 @@ export const PublicRoute = () => {
 // Auth header middleware for API requests
 export const setAuthHeader = (token: string | null): void => {
   if (token) {
-    // Set for fetch
-    window.localStorage.setItem('token', token);
+    localStorage.setItem('token', token);
   } else {
-    // Remove if token is null (logout)
-    window.localStorage.removeItem('token');
+    localStorage.removeItem('token');
   }
 };

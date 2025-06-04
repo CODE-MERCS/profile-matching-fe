@@ -1,0 +1,447 @@
+{
+    "info": {
+      "name": "Profile Matching API",
+      "description": "API untuk sistem Profile Matching",
+      "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+      {
+        "name": "Authentication",
+        "item": [
+          {
+            "name": "Register",
+            "request": {
+              "method": "POST",
+              "url": "{{base_url}}/auth/register",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Nama Lengkap\",\n  \"email\": \"email@example.com\",\n  \"phone\": \"081234567890\",\n  \"password\": \"password123\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success Response",
+                  "originalRequest": {
+                    "method": "POST",
+                    "url": "{{base_url}}/auth/register",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"name\": \"Nama Lengkap\",\n  \"email\": \"email@example.com\",\n  \"phone\": \"081234567890\",\n  \"password\": \"password123\"\n}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 201,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Registrasi berhasil\",\n  \"data\": {\n    \"id\": \"user_id\",\n    \"name\": \"Nama Lengkap\",\n    \"email\": \"email@example.com\",\n    \"phone\": \"081234567890\"\n  }\n}",
+                  "curl": "curl --location '{{base_url}}/auth/register' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{\n  \"name\": \"Nama Lengkap\",\n  \"email\": \"email@example.com\",\n  \"phone\": \"081234567890\",\n  \"password\": \"password123\"\n}'"
+                }
+              ]
+            }
+          },
+          {
+            "name": "Login",
+            "request": {
+              "method": "POST",
+              "url": "{{base_url}}/auth/login",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"email\": \"email@example.com\",\n  \"password\": \"password123\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "response": [
+                {
+                  "name": "Success Response",
+                  "originalRequest": {
+                    "method": "POST",
+                    "url": "{{base_url}}/auth/login",
+                    "body": {
+                      "mode": "raw",
+                      "raw": "{\n  \"email\": \"email@example.com\",\n  \"password\": \"password123\"\n}"
+                    }
+                  },
+                  "status": "OK",
+                  "code": 200,
+                  "header": [
+                    {
+                      "key": "Content-Type",
+                      "value": "application/json"
+                    }
+                  ],
+                  "body": "{\n  \"success\": true,\n  \"message\": \"Login berhasil\",\n  \"data\": {\n    \"token\": \"jwt_token\",\n    \"user\": {\n      \"id\": \"user_id\",\n      \"name\": \"Nama Lengkap\",\n      \"email\": \"email@example.com\"\n    }\n  }\n}",
+                  "curl": "curl --location '{{base_url}}/auth/login' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{\n  \"email\": \"email@example.com\",\n  \"password\": \"password123\"\n}'"
+                }
+              ]
+            }
+          },
+          {
+            "name": "Change Password",
+            "request": {
+              "method": "POST",
+              "url": "{{base_url}}/auth/change-password",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newpassword123\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "curl": "curl --location '{{base_url}}/auth/change-password' \\\n--header 'Authorization: Bearer {{token}}' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newpassword123\"\n}'"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Pelamar",
+        "item": [
+          {
+            "name": "Create Pelamar",
+            "request": {
+              "method": "POST",
+              "url": "{{base_url}}/pelamar",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Nama Pelamar\",\n  \"email\": \"pelamar@example.com\",\n  \"phone\": \"081234567890\",\n  \"address\": \"Alamat Lengkap\",\n  \"education\": \"S1 Teknik Informatika\",\n  \"experience\": 2,\n  \"skills\": [\"JavaScript\", \"Node.js\", \"React\"],\n  \"expectedSalary\": 8000000\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "curl": "curl --location '{{base_url}}/pelamar' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{\n  \"name\": \"Nama Pelamar\",\n  \"email\": \"pelamar@example.com\",\n  \"phone\": \"081234567890\",\n  \"address\": \"Alamat Lengkap\",\n  \"education\": \"S1 Teknik Informatika\",\n  \"experience\": 2,\n  \"skills\": [\"JavaScript\", \"Node.js\", \"React\"],\n  \"expectedSalary\": 8000000\n}'"
+            }
+          },
+          {
+            "name": "Get All Pelamar",
+            "request": {
+              "method": "GET",
+              "url": "{{base_url}}/pelamar",
+              "curl": "curl --location '{{base_url}}/pelamar'"
+            }
+          },
+          {
+            "name": "Get Pelamar By ID",
+            "request": {
+              "method": "GET",
+              "url": "{{base_url}}/pelamar/:id",
+              "curl": "curl --location '{{base_url}}/pelamar/:id'"
+            }
+          },
+          {
+            "name": "Update Pelamar",
+            "request": {
+              "method": "PUT",
+              "url": "{{base_url}}/pelamar/:id",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Nama Pelamar Updated\",\n  \"email\": \"pelamar.updated@example.com\",\n  \"phone\": \"081234567891\",\n  \"address\": \"Alamat Baru\",\n  \"education\": \"S2 Teknik Informatika\",\n  \"experience\": 3,\n  \"skills\": [\"JavaScript\", \"Node.js\", \"React\", \"TypeScript\"],\n  \"expectedSalary\": 10000000\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "curl": "curl --location --request PUT '{{base_url}}/pelamar/:id' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{\n  \"name\": \"Nama Pelamar Updated\",\n  \"email\": \"pelamar.updated@example.com\",\n  \"phone\": \"081234567891\",\n  \"address\": \"Alamat Baru\",\n  \"education\": \"S2 Teknik Informatika\",\n  \"experience\": 3,\n  \"skills\": [\"JavaScript\", \"Node.js\", \"React\", \"TypeScript\"],\n  \"expectedSalary\": 10000000\n}'"
+            }
+          },
+          {
+            "name": "Delete Pelamar",
+            "request": {
+              "method": "DELETE",
+              "url": "{{base_url}}/pelamar/:id",
+              "curl": "curl --location --request DELETE '{{base_url}}/pelamar/:id'"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Pekerjaan",
+        "item": [
+          {
+            "name": "Get All Pekerjaan",
+            "request": {
+              "method": "GET",
+              "url": "{{base_url}}/pekerjaan",
+              "curl": "curl --location '{{base_url}}/pekerjaan'"
+            }
+          },
+          {
+            "name": "Get Pekerjaan By ID",
+            "request": {
+              "method": "GET",
+              "url": "{{base_url}}/pekerjaan/:id",
+              "curl": "curl --location '{{base_url}}/pekerjaan/:id'"
+            }
+          },
+          {
+            "name": "Create Pekerjaan",
+            "request": {
+              "method": "POST",
+              "url": "{{base_url}}/pekerjaan",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"title\": \"Full Stack Developer\",\n  \"description\": \"Membuat aplikasi web full stack\",\n  \"requirements\": [\"S1 Teknik Informatika\", \"Pengalaman 2 tahun\"],\n  \"salary\": 12000000,\n  \"location\": \"Jakarta\",\n  \"type\": \"Full-time\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "curl": "curl --location '{{base_url}}/pekerjaan' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{\n  \"title\": \"Full Stack Developer\",\n  \"description\": \"Membuat aplikasi web full stack\",\n  \"requirements\": [\"S1 Teknik Informatika\", \"Pengalaman 2 tahun\"],\n  \"salary\": 12000000,\n  \"location\": \"Jakarta\",\n  \"type\": \"Full-time\"\n}'"
+            }
+          },
+          {
+            "name": "Update Pekerjaan",
+            "request": {
+              "method": "PUT",
+              "url": "{{base_url}}/pekerjaan/:id",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"title\": \"Senior Full Stack Developer\",\n  \"description\": \"Membuat dan memimpin pengembangan aplikasi web full stack\",\n  \"requirements\": [\"S1 Teknik Informatika\", \"Pengalaman 5 tahun\"],\n  \"salary\": 15000000,\n  \"location\": \"Jakarta\",\n  \"type\": \"Full-time\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "curl": "curl --location --request PUT '{{base_url}}/pekerjaan/:id' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{\n  \"title\": \"Senior Full Stack Developer\",\n  \"description\": \"Membuat dan memimpin pengembangan aplikasi web full stack\",\n  \"requirements\": [\"S1 Teknik Informatika\", \"Pengalaman 5 tahun\"],\n  \"salary\": 15000000,\n  \"location\": \"Jakarta\",\n  \"type\": \"Full-time\"\n}'"
+            }
+          },
+          {
+            "name": "Delete Pekerjaan",
+            "request": {
+              "method": "DELETE",
+              "url": "{{base_url}}/pekerjaan/:id",
+              "curl": "curl --location --request DELETE '{{base_url}}/pekerjaan/:id'"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Kriteria",
+        "item": [
+          {
+            "name": "Get All Kriteria",
+            "request": {
+              "method": "GET",
+              "url": "{{base_url}}/kriteria",
+              "curl": "curl --location '{{base_url}}/kriteria'"
+            }
+          },
+          {
+            "name": "Get Kriteria By ID",
+            "request": {
+              "method": "GET",
+              "url": "{{base_url}}/kriteria/:id",
+              "curl": "curl --location '{{base_url}}/kriteria/:id'"
+            }
+          },
+          {
+            "name": "Create Kriteria",
+            "request": {
+              "method": "POST",
+              "url": "{{base_url}}/kriteria",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Pendidikan\",\n  \"weight\": 0.3,\n  \"description\": \"Kriteria berdasarkan tingkat pendidikan\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "curl": "curl --location '{{base_url}}/kriteria' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{\n  \"name\": \"Pendidikan\",\n  \"weight\": 0.3,\n  \"description\": \"Kriteria berdasarkan tingkat pendidikan\"\n}'"
+            }
+          },
+          {
+            "name": "Update Kriteria",
+            "request": {
+              "method": "PUT",
+              "url": "{{base_url}}/kriteria/:id",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"name\": \"Pendidikan\",\n  \"weight\": 0.4,\n  \"description\": \"Kriteria berdasarkan tingkat pendidikan dan IPK\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "curl": "curl --location --request PUT '{{base_url}}/kriteria/:id' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{\n  \"name\": \"Pendidikan\",\n  \"weight\": 0.4,\n  \"description\": \"Kriteria berdasarkan tingkat pendidikan dan IPK\"\n}'"
+            }
+          },
+          {
+            "name": "Delete Kriteria",
+            "request": {
+              "method": "DELETE",
+              "url": "{{base_url}}/kriteria/:id",
+              "curl": "curl --location --request DELETE '{{base_url}}/kriteria/:id'"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Subkriteria",
+        "item": [
+          {
+            "name": "Create Subkriteria",
+            "request": {
+              "method": "POST",
+              "url": "{{base_url}}/subkriteria",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"kriteriaId\": \"kriteria_id\",\n  \"name\": \"S1\",\n  \"value\": 4,\n  \"description\": \"Sarjana Strata 1\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "curl": "curl --location '{{base_url}}/subkriteria' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{\n  \"kriteriaId\": \"kriteria_id\",\n  \"name\": \"S1\",\n  \"value\": 4,\n  \"description\": \"Sarjana Strata 1\"\n}'"
+            }
+          },
+          {
+            "name": "Get All Subkriteria",
+            "request": {
+              "method": "GET",
+              "url": "{{base_url}}/subkriteria",
+              "curl": "curl --location '{{base_url}}/subkriteria'"
+            }
+          },
+          {
+            "name": "Get Subkriteria By ID",
+            "request": {
+              "method": "GET",
+              "url": "{{base_url}}/subkriteria/:id",
+              "curl": "curl --location '{{base_url}}/subkriteria/:id'"
+            }
+          },
+          {
+            "name": "Update Subkriteria",
+            "request": {
+              "method": "PUT",
+              "url": "{{base_url}}/subkriteria/:id",
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"kriteriaId\": \"kriteria_id\",\n  \"name\": \"S1 dengan IPK > 3.5\",\n  \"value\": 5,\n  \"description\": \"Sarjana Strata 1 dengan IPK di atas 3.5\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "curl": "curl --location --request PUT '{{base_url}}/subkriteria/:id' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{\n  \"kriteriaId\": \"kriteria_id\",\n  \"name\": \"S1 dengan IPK > 3.5\",\n  \"value\": 5,\n  \"description\": \"Sarjana Strata 1 dengan IPK di atas 3.5\"\n}'"
+            }
+          },
+          {
+            "name": "Delete Subkriteria",
+            "request": {
+              "method": "DELETE",
+              "url": "{{base_url}}/subkriteria/:id",
+              "curl": "curl --location --request DELETE '{{base_url}}/subkriteria/:id'"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Perhitungan",
+        "item": [
+          {
+            "name": "Input Nilai Perhitungan",
+            "request": {
+              "method": "POST",
+              "url": "{{base_url}}/perhitungan/input",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"pelamarId\": \"pelamar_id\",\n  \"pekerjaanId\": \"pekerjaan_id\",\n  \"periode\": \"2024-01\",\n  \"nilaiKriteria\": [\n    {\n      \"kriteriaId\": \"kriteria_id\",\n      \"subkriteriaId\": \"subkriteria_id\",\n      \"nilai\": 4\n    }\n  ]\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "curl": "curl --location '{{base_url}}/perhitungan/input' \\\n--header 'Authorization: Bearer {{token}}' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{\n  \"pelamarId\": \"pelamar_id\",\n  \"pekerjaanId\": \"pekerjaan_id\",\n  \"periode\": \"2024-01\",\n  \"nilaiKriteria\": [\n    {\n      \"kriteriaId\": \"kriteria_id\",\n      \"subkriteriaId\": \"subkriteria_id\",\n      \"nilai\": 4\n    }\n  ]\n}'"
+            }
+          },
+          {
+            "name": "Hitung Ulang Ranking",
+            "request": {
+              "method": "POST",
+              "url": "{{base_url}}/perhitungan/hitung-ranking",
+              "header": [
+                {
+                  "key": "Authorization",
+                  "value": "Bearer {{token}}"
+                }
+              ],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n  \"periode\": \"2024-01\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "curl": "curl --location '{{base_url}}/perhitungan/hitung-ranking' \\\n--header 'Authorization: Bearer {{token}}' \\\n--header 'Content-Type: application/json' \\\n--data-raw '{\n  \"periode\": \"2024-01\"\n}'"
+            }
+          },
+          {
+            "name": "Get Hasil Perhitungan Per Pelamar",
+            "request": {
+              "method": "GET",
+              "url": "{{base_url}}/perhitungan/hasil/:id_pelamar",
+              "curl": "curl --location '{{base_url}}/perhitungan/hasil/:id_pelamar' \\\n--header 'Authorization: Bearer {{token}}'"
+            }
+          },
+          {
+            "name": "Get Ranking Per Periode",
+            "request": {
+              "method": "GET",
+              "url": "{{base_url}}/perhitungan/ranking",
+              "curl": "curl --location '{{base_url}}/perhitungan/ranking' \\\n--header 'Authorization: Bearer {{token}}'"
+            }
+          }
+        ]
+      },
+      {
+        "name": "Health Check",
+        "item": [
+          {
+            "name": "Check Health",
+            "request": {
+              "method": "GET",
+              "url": "{{base_url}}/health",
+              "curl": "curl --location '{{base_url}}/health'"
+            }
+          }
+        ]
+      }
+    ]
+  }
