@@ -8,6 +8,8 @@ import DataPelamar from '../DataPelamar/DataPelamar';
 import authService from '../../utils/dummyAuth';
 import { setAuthHeader } from '../../middleware/authMiddleware';
 import GantiPassword from '../GantiPassword/GantiPassword';
+import DataKriteria from '../DataKriteria/DataKriteria'; 
+
 // Define menu items with icons (icons are now handled in MenuItem component)
 const menuItems = [
   { id: 'home', label: 'Home' },
@@ -115,6 +117,8 @@ const Dashboard: React.FC = () => {
           return <DataPelamar />;
         case 'ganti-password':
           return <GantiPassword />;
+           case 'data-kriteria':
+        return <DataKriteria />;
       default:
         return (
           <div className="bg-white rounded-lg shadow-sm p-6 animate-fade-in">

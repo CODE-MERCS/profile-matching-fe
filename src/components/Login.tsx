@@ -1,29 +1,29 @@
-import { useState } from 'react';
-import { authService } from '../services/authService';
-import { useNavigate } from 'react-router-dom';
+import { useState } from "react";
+import { authService } from "../services/authService";
+import { useNavigate } from "react-router-dom";
 
 export const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     try {
       const response = await authService.login({ email, password });
-      
+
       if (response.success) {
-        navigate('/dashboard', { replace: true });
+        navigate("/dashboard", { replace: true });
       } else {
-        setError(response.message || 'Login gagal');
+        setError(response.message || "Login gagal");
       }
     } catch (err: any) {
-      setError(err.message || 'Terjadi kesalahan saat login');
+      setError(err.message || "Terjadi kesalahan saat login");
     } finally {
       setLoading(false);
     }
@@ -39,13 +39,18 @@ export const Login = () => {
         </div>
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <div
+              className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+              role="alert"
+            >
               <span className="block sm:inline">{error}</span>
             </div>
           )}
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="email" className="sr-only">Email</label>
+              <label htmlFor="email" className="sr-only">
+                Email
+              </label>
               <input
                 id="email"
                 name="email"
@@ -58,7 +63,9 @@ export const Login = () => {
               />
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">Password</label>
+              <label htmlFor="password" className="sr-only">
+                Password
+              </label>
               <input
                 id="password"
                 name="password"
@@ -78,11 +85,11 @@ export const Login = () => {
               disabled={loading}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50"
             >
-              {loading ? 'Loading...' : 'Login'}
+              {loading ? "Loading..." : "Login"}
             </button>
           </div>
         </form>
       </div>
     </div>
   );
-}; 
+};
