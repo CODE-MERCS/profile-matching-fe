@@ -8,35 +8,23 @@ import Modal from '../../components/organisms/Modal/Modal';
 import PelamarForm from '../../components/organisms/PelamarForm/PelamarForm';
 import DeleteConfirmation from '../../components/molecules/DeleteConfirmation/DeleteConfirmation';
 import Toast from '../../components/atoms/Toast/Toast';
-import Badge from '../../components/atoms/Badge/Badge';
-
-interface Pelamar {
-  id: string;
-  nama: string;
-  email: string;
-  telepon: string;
-  pendidikan: string;
-  posisi: string;
-  status: 'pending' | 'interview' | 'hired' | 'rejected';
-  tanggalLamar: string;
-}
+import { pelamarService, PelamarDisplay } from '../../services/pelamarService';
 
 const DataPelamar: React.FC = () => {
   // State untuk data dan UI
-  const [pelamar, setPelamar] = useState<Pelamar[]>([]);
-  const [filteredData, setFilteredData] = useState<Pelamar[]>([]);
+  const [pelamar, setPelamar] = useState<PelamarDisplay[]>([]);
+  const [filteredData, setFilteredData] = useState<PelamarDisplay[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [entriesPerPage, setEntriesPerPage] = useState(10);
   const [totalEntries, setTotalEntries] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   
   // State untuk modals
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
-  const [currentPelamar, setCurrentPelamar] = useState<Pelamar | null>(null);
+  const [currentPelamar, setCurrentPelamar] = useState<PelamarDisplay | null>(null);
   const [toastMessage, setToastMessage] = useState<{type: 'success' | 'error', message: string} | null>(null);
   
   // Definisi kolom untuk tabel
@@ -52,18 +40,18 @@ const DataPelamar: React.FC = () => {
       sortable: true 
     },
     { 
-      id: 'posisi', 
-      label: 'POSISI', 
+      id: 'email', 
+      label: 'EMAIL', 
       sortable: true 
     },
     { 
-      id: 'status', 
-      label: 'STATUS', 
+      id: 'telepon', 
+      label: 'TELEPON', 
       sortable: true 
     },
     { 
       id: 'tanggalLamar', 
-      label: 'TANGGAL LAMAR', 
+      label: 'TANGGAL DAFTAR', 
       sortable: true 
     },
     { 
@@ -76,63 +64,21 @@ const DataPelamar: React.FC = () => {
   // Options untuk dropdown
   const entriesOptions = [10, 25, 50, 100];
   
-  // Status filter options
-  const statusOptions = [
-    { value: 'all', label: 'Semua Status' },
-    { value: 'pending', label: 'Pending' },
-    { value: 'interview', label: 'Interview' },
-    { value: 'hired', label: 'Diterima' },
-    { value: 'rejected', label: 'Ditolak' }
-  ];
-  
-  // Mock data loading - Ganti dengan API call sebenarnya
+  // Load data dari API
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        // Simulasi API call dengan timeout
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Mock data
-        const statusOptions = ['pending', 'interview', 'hired', 'rejected'];
-        const posisiOptions = [
-          'UI/UX Designer', 
-          'Web Developer', 
-          'Data Analyst', 
-          'HR Manager', 
-          'Project Manager', 
-          'Digital Marketing', 
-          'Content Writer'
-        ];
-        const pendidikanOptions = ['SMA', 'D3', 'S1', 'S2', 'S3'];
-        
-        const mockData = Array(500).fill(null).map((_, index) => {
-          const today = new Date();
-          const randomDaysAgo = Math.floor(Math.random() * 60); // Random day in the past 2 months
-          const randomDate = new Date(today);
-          randomDate.setDate(today.getDate() - randomDaysAgo);
-          
-          return {
-            id: `APL-${String(index + 1).padStart(3, '0')}`,
-            nama: `Pelamar ${index + 1}`,
-            email: `pelamar${index + 1}@example.com`,
-            telepon: `08${Math.floor(Math.random() * 90000000) + 10000000}`,
-            pendidikan: pendidikanOptions[Math.floor(Math.random() * pendidikanOptions.length)],
-            posisi: posisiOptions[Math.floor(Math.random() * posisiOptions.length)],
-            status: statusOptions[Math.floor(Math.random() * statusOptions.length)] as 'pending' | 'interview' | 'hired' | 'rejected',
-            tanggalLamar: randomDate.toISOString().split('T')[0]
-          };
-        });
-        
-        setPelamar(mockData);
-        setTotalEntries(mockData.length);
-        setIsLoading(false);
+        const data = await pelamarService.getAllPelamar();
+        setPelamar(data);
+        setTotalEntries(data.length);
       } catch (error) {
         console.error('Error fetching data:', error);
         setToastMessage({
           type: 'error',
-          message: 'Gagal memuat data pelamar.'
+          message: error instanceof Error ? error.message : 'Gagal memuat data pelamar.'
         });
+      } finally {
         setIsLoading(false);
       }
     };
@@ -140,23 +86,18 @@ const DataPelamar: React.FC = () => {
     fetchData();
   }, []);
   
-  // Filter data berdasarkan pencarian dan status
+  // Filter data berdasarkan pencarian
   useEffect(() => {
     const filterData = () => {
       let filtered = [...pelamar];
-      
-      // Filter by status if not 'all'
-      if (statusFilter !== 'all') {
-        filtered = filtered.filter(item => item.status === statusFilter);
-      }
       
       // Filter by search term
       if (searchTerm.trim()) {
         filtered = filtered.filter(item => 
           item.id.toLowerCase().includes(searchTerm.toLowerCase()) || 
           item.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.posisi.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          item.email.toLowerCase().includes(searchTerm.toLowerCase())
+          item.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          item.telepon.toLowerCase().includes(searchTerm.toLowerCase())
         );
       }
       
@@ -165,7 +106,7 @@ const DataPelamar: React.FC = () => {
     };
     
     filterData();
-  }, [searchTerm, pelamar, statusFilter]);
+  }, [searchTerm, pelamar]);
   
   // Get current page data
   const getCurrentPageData = () => {
@@ -190,29 +131,9 @@ const DataPelamar: React.FC = () => {
     return new Date(dateString).toLocaleDateString('id-ID', options);
   };
   
-  // Render status badge
-  const renderStatus = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge color="yellow" text="Pending" />;
-      case 'interview':
-        return <Badge color="blue" text="Interview" />;
-      case 'hired':
-        return <Badge color="green" text="Diterima" />;
-      case 'rejected':
-        return <Badge color="red" text="Ditolak" />;
-      default:
-        return <Badge color="gray" text={status} />;
-    }
-  };
-  
   // Handlers
   const handleSearch = (value: string) => {
     setSearchTerm(value);
-  };
-  
-  const handleStatusFilterChange = (value: string | number) => {
-    setStatusFilter(value as string);
   };
   
   const handlePageChange = (page: number) => {
@@ -229,42 +150,46 @@ const DataPelamar: React.FC = () => {
     setIsFormModalOpen(true);
   };
   
-  const handleOpenEditModal = (item: Pelamar) => {
+  const handleOpenEditModal = (item: PelamarDisplay) => {
     setCurrentPelamar(item);
     setIsFormModalOpen(true);
   };
   
-  const handleOpenViewModal = (item: Pelamar) => {
+  const handleOpenViewModal = (item: PelamarDisplay) => {
     setCurrentPelamar(item);
     setIsViewModalOpen(true);
   };
   
-  const handleOpenDeleteModal = (item: Pelamar) => {
+  const handleOpenDeleteModal = (item: PelamarDisplay) => {
     setCurrentPelamar(item);
     setIsDeleteModalOpen(true);
   };
   
-  const handleSubmitForm = async (data: Pelamar) => {
+  const handleSubmitForm = async (data: PelamarDisplay) => {
     try {
-      // Simulasi API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
       if (currentPelamar) {
         // Update existing
+        const id = pelamarService.extractIdFromDisplayId(data.id);
+        const updatedPelamar = await pelamarService.updatePelamar(id, data);
+        
         setPelamar(prev => 
-          prev.map(item => item.id === data.id ? data : item)
+          prev.map(item => item.id === data.id ? updatedPelamar : item)
         );
+        
         setToastMessage({
           type: 'success',
-          message: `Data pelamar "${data.nama}" berhasil diperbarui.`
+          message: `Data pelamar "${updatedPelamar.nama}" berhasil diperbarui.`
         });
       } else {
         // Add new
-        setPelamar(prev => [...prev, data]);
+        const newPelamar = await pelamarService.createPelamar(data);
+        
+        setPelamar(prev => [...prev, newPelamar]);
         setTotalEntries(prev => prev + 1);
+        
         setToastMessage({
           type: 'success',
-          message: `Pelamar "${data.nama}" berhasil ditambahkan.`
+          message: `Pelamar "${newPelamar.nama}" berhasil ditambahkan.`
         });
       }
       
@@ -273,7 +198,7 @@ const DataPelamar: React.FC = () => {
       console.error('Error submitting form:', error);
       setToastMessage({
         type: 'error',
-        message: 'Terjadi kesalahan. Silakan coba lagi.'
+        message: error instanceof Error ? error.message : 'Terjadi kesalahan. Silakan coba lagi.'
       });
     }
   };
@@ -282,8 +207,8 @@ const DataPelamar: React.FC = () => {
     if (!currentPelamar) return;
     
     try {
-      // Simulasi API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const id = pelamarService.extractIdFromDisplayId(currentPelamar.id);
+      await pelamarService.deletePelamar(id);
       
       setPelamar(prev => 
         prev.filter(item => item.id !== currentPelamar.id)
@@ -300,7 +225,7 @@ const DataPelamar: React.FC = () => {
       console.error('Error deleting item:', error);
       setToastMessage({
         type: 'error',
-        message: 'Gagal menghapus data. Silakan coba lagi.'
+        message: error instanceof Error ? error.message : 'Gagal menghapus data. Silakan coba lagi.'
       });
     }
   };
@@ -314,19 +239,17 @@ const DataPelamar: React.FC = () => {
   };
   
   // Render cell data for custom columns
-  const renderCellData = (item: Pelamar, columnId: string) => {
+  const renderCellData = (item: PelamarDisplay, columnId: string) => {
     switch (columnId) {
-      case 'status':
-        return renderStatus(item.status);
       case 'tanggalLamar':
         return formatDate(item.tanggalLamar);
       default:
-        return item[columnId as keyof Pelamar];
+        return item[columnId as keyof PelamarDisplay];
     }
   };
   
   // Render row actions
-  const renderActions = (item: Pelamar) => (
+  const renderActions = (item: PelamarDisplay) => (
     <div className="flex space-x-2">
       <Button 
         variant="secondary" 
@@ -395,29 +318,17 @@ const DataPelamar: React.FC = () => {
         </div>
       </div>
       
-      {/* Filter & Entries Section */}
+      {/* Entries Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <div className="flex items-center">
-            <span className="mr-2 text-sm text-gray-600">Status:</span>
-            <Dropdown
-              value={statusFilter}
-              onChange={handleStatusFilterChange}
-              options={statusOptions}
-              width="160px"
-            />
-          </div>
-          
-          <div className="flex items-center">
-            <span className="mr-2 text-sm text-gray-600">Tampilkan:</span>
-            <Dropdown
-              value={entriesPerPage}
-              onChange={handleEntriesPerPageChange}
-              options={entriesOptions.map(value => ({ value, label: String(value) }))}
-              width="80px"
-            />
-            <span className="ml-2 text-sm text-gray-600">entri</span>
-          </div>
+        <div className="flex items-center">
+          <span className="mr-2 text-sm text-gray-600">Tampilkan:</span>
+          <Dropdown
+            value={entriesPerPage}
+            onChange={handleEntriesPerPageChange}
+            options={entriesOptions.map(value => ({ value, label: String(value) }))}
+            width="80px"
+          />
+          <span className="ml-2 text-sm text-gray-600">entri</span>
         </div>
         
         <div className="text-sm text-gray-600">
@@ -530,18 +441,8 @@ const DataPelamar: React.FC = () => {
               </div>
               
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Status</h3>
-                <div className="mt-1">{renderStatus(currentPelamar.status)}</div>
-              </div>
-              
-              <div>
                 <h3 className="text-sm font-medium text-gray-500">Nama Lengkap</h3>
                 <p className="mt-1 text-sm text-gray-900">{currentPelamar.nama}</p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Posisi yang Dilamar</h3>
-                <p className="mt-1 text-sm text-gray-900">{currentPelamar.posisi}</p>
               </div>
               
               <div>
@@ -555,12 +456,7 @@ const DataPelamar: React.FC = () => {
               </div>
               
               <div>
-                <h3 className="text-sm font-medium text-gray-500">Pendidikan Terakhir</h3>
-                <p className="mt-1 text-sm text-gray-900">{currentPelamar.pendidikan}</p>
-              </div>
-              
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Tanggal Lamar</h3>
+                <h3 className="text-sm font-medium text-gray-500">Tanggal Daftar</h3>
                 <p className="mt-1 text-sm text-gray-900">{formatDate(currentPelamar.tanggalLamar)}</p>
               </div>
             </div>
