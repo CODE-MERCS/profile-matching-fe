@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Button from '../../components/atoms/Button/Button';
 import Input from '../../components/atoms/Input/Input';
 import Toast from '../../components/atoms/Toast/Toast';
+import { authService } from '../../services/authService'; // Import authService
 
 const GantiPassword: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -90,8 +91,11 @@ const GantiPassword: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      // Simulasi API call untuk mengganti password
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Call API to change password
+      await authService.changePassword({
+        currentPassword: formData.passwordLama,
+        newPassword: formData.passwordBaru
+      });
       
       // Reset form setelah berhasil
       setFormData({
@@ -106,9 +110,15 @@ const GantiPassword: React.FC = () => {
       });
     } catch (error) {
       console.error('Error changing password:', error);
+      
+      // Handle specific error messages
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Gagal mengubah password. Silakan coba lagi.';
+      
       setToastMessage({
         type: 'error',
-        message: 'Gagal mengubah password. Silakan coba lagi.'
+        message: errorMessage
       });
     } finally {
       setIsSubmitting(false);
