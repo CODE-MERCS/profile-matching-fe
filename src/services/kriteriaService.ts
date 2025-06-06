@@ -330,7 +330,7 @@ export const kriteriaService = {
 
   // Helper function untuk extract ID dari display ID (KRT-001 -> 1)
   extractIdFromDisplayId(displayId: string): number {
-    const match = displayId.match(/KRT-(\d+)/);
+    const match = displayId.match(/K-(\d+)/);
     return match ? parseInt(match[1], 10) : 0;
   }
 };

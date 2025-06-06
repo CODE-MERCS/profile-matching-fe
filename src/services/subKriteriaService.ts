@@ -332,7 +332,7 @@ export const subkriteriaService = {
 
   // Helper function untuk extract ID dari display ID (SUB-001 -> 1)
   extractIdFromDisplayId(displayId: string): number {
-    const match = displayId.match(/SUB-(\d+)/);
+    const match = displayId.match(/S-(\d+)/);
     return match ? parseInt(match[1], 10) : 0;
   }
 };

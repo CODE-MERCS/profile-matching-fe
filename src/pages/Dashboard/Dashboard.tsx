@@ -6,10 +6,11 @@ import DashboardLayout from '../../components/templates/DashboardLayout/Dashboar
 import DataPekerjaan from '../DataPekerjaan/DataPekerjaan';
 import DataPelamar from '../DataPelamar/DataPelamar';
 import DataSubKriteria from '../DataSubKriteria/DataSubKriteria';
+import DataKriteria from '../DataKriteria/DataKriteria';
+import ProsesProfileMatching from '../ProsesProfileMatching/ProsesProfileMatching';
+import GantiPassword from '../GantiPassword/GantiPassword';
 import authService from '../../utils/dummyAuth';
 import { setAuthHeader } from '../../middleware/authMiddleware';
-import GantiPassword from '../GantiPassword/GantiPassword';
-import DataKriteria from '../DataKriteria/DataKriteria'; 
 
 // Define menu items with icons (icons are now handled in MenuItem component)
 const menuItems = [
@@ -112,16 +113,18 @@ const Dashboard: React.FC = () => {
             </div>
           </div>
         );
-        case 'data-pekerjaan':
-          return <DataPekerjaan />;
-        case 'data-pelamar':
-          return <DataPelamar />;
-        case 'ganti-password':
-          return <GantiPassword />;
-           case 'data-kriteria':
+      case 'data-pekerjaan':
+        return <DataPekerjaan />;
+      case 'data-pelamar':
+        return <DataPelamar />;
+      case 'data-kriteria':
         return <DataKriteria />;
-         case 'data-subkriteria':
+      case 'data-subkriteria':
         return <DataSubKriteria />;
+      case 'proses-matching':
+        return <ProsesProfileMatching />;
+      case 'ganti-password':
+        return <GantiPassword />;
       default:
         return (
           <div className="bg-white rounded-lg shadow-sm p-6 animate-fade-in">

@@ -222,7 +222,7 @@ export const pelamarService = {
 
   // Helper function untuk extract ID dari display ID (APL-001 -> 1)
   extractIdFromDisplayId(displayId: string): number {
-    const match = displayId.match(/APL-(\d+)/);
+    const match = displayId.match(/A-(\d+)/);
     return match ? parseInt(match[1], 10) : 0;
   }
 };
