@@ -5,6 +5,7 @@ import Sidebar from '../../components/organisms/Sidebar/Sidebar';
 import DashboardLayout from '../../components/templates/DashboardLayout/DashboardLayout';
 import DataPekerjaan from '../DataPekerjaan/DataPekerjaan';
 import DataPelamar from '../DataPelamar/DataPelamar';
+import DataSubKriteria from '../DataSubKriteria/DataSubKriteria';
 import authService from '../../utils/dummyAuth';
 import { setAuthHeader } from '../../middleware/authMiddleware';
 import GantiPassword from '../GantiPassword/GantiPassword';
@@ -119,6 +120,8 @@ const Dashboard: React.FC = () => {
           return <GantiPassword />;
            case 'data-kriteria':
         return <DataKriteria />;
+         case 'data-subkriteria':
+        return <DataSubKriteria />;
       default:
         return (
           <div className="bg-white rounded-lg shadow-sm p-6 animate-fade-in">

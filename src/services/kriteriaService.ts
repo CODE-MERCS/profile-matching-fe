@@ -23,12 +23,32 @@ export interface Subkriteria {
   kriteria_id: number;
 }
 
-// Interface untuk Pekerjaan
+// Interface untuk Pekerjaan berdasarkan API response
 export interface Pekerjaan {
   id_pekerjaan: number;
   namapekerjaan: string;
   createdAt: string;
   updatedAt: string;
+}
+
+// Interface untuk Pekerjaan Detail dengan kriteria (untuk SubkriteriaForm)
+export interface PekerjaanDetail {
+  id_pekerjaan: number;
+  namapekerjaan: string;
+  createdAt: string;
+  updatedAt: string;
+  kriterias: KriteriaFromPekerjaan[];
+}
+
+// Interface untuk Kriteria dari response pekerjaan by ID
+export interface KriteriaFromPekerjaan {
+  id_kriteria: number;
+  namakriteria: string;
+  bobot: number;
+  pekerjaan_id: number;
+  createdAt: string;
+  updatedAt: string;
+  subkriterias: any[];
 }
 
 // Interface untuk data yang ditampilkan di frontend
