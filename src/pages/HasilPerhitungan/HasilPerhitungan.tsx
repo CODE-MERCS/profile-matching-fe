@@ -1,8 +1,8 @@
-
 // src/pages/HasilPerhitungan/HasilPerhitungan.tsx
 import React, { useState } from 'react';
 import Button from '../../components/atoms/Button/Button';
 import LihatRanking from '../LihatRanking/LihatRanking';
+import LihatHasilPerhitungan from '../LihatHasilPerhitungan/LihatHasilPerhitungan';
 
 const HasilPerhitungan: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'menu' | 'ranking' | 'detail'>('menu');
@@ -12,29 +12,7 @@ const HasilPerhitungan: React.FC = () => {
       case 'ranking':
         return <LihatRanking />;
       case 'detail':
-        return (
-          <div className="p-6 max-w-full">
-            <div className="mb-6">
-              <h1 className="text-2xl font-semibold text-gray-800">Lihat Hasil Perhitungan</h1>
-              <p className="text-gray-600 mt-1">
-                Lihat detail lengkap hasil perhitungan Profile Matching.
-              </p>
-            </div>
-            
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex items-center justify-center h-64 border-2 border-dashed border-gray-200 rounded-lg">
-                <div className="text-center">
-                  <h3 className="text-lg font-medium text-gray-700 mb-2">
-                    Fitur Lihat Hasil Perhitungan
-                  </h3>
-                  <p className="text-gray-500">
-                    Halaman ini sedang dalam pengembangan.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+        return <LihatHasilPerhitungan />;
       default:
         return (
           <div className="p-6 max-w-full">
@@ -83,7 +61,7 @@ const HasilPerhitungan: React.FC = () => {
                       <svg className="w-4 h-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                       </svg>
-                      Export data ke format PDF
+                      Export data ke format CSV
                     </div>
                   </div>
                   
@@ -145,15 +123,11 @@ const HasilPerhitungan: React.FC = () => {
                   </div>
                   
                   <Button
-                    variant="secondary"
+                    variant="primary"
                     onClick={() => setActiveTab('detail')}
                     className="w-full"
-                    disabled
                   >
                     Lihat Detail Perhitungan
-                    <span className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
-                      Coming Soon
-                    </span>
                   </Button>
                 </div>
               </div>
