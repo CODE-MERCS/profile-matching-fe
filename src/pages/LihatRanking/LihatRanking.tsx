@@ -14,6 +14,9 @@ const LihatRanking: React.FC = () => {
   const [isLoadingPekerjaan, setIsLoadingPekerjaan] = useState(true);
   const [isLoadingRanking, setIsLoadingRanking] = useState(false);
   
+  // State untuk selection pelamar yang lolos
+  const [selectedWinners, setSelectedWinners] = useState<number[]>([]);
+  
   // State untuk toast
   const [toastMessage, setToastMessage] = useState<{type: 'success' | 'error', message: string} | null>(null);
 
@@ -44,6 +47,7 @@ const LihatRanking: React.FC = () => {
     const loadRankingData = async () => {
       if (!selectedPekerjaanId) {
         setRankingData(null);
+        setSelectedWinners([]);
         return;
       }
 
@@ -51,10 +55,12 @@ const LihatRanking: React.FC = () => {
       try {
         const data = await hasilPerhitunganService.getRankingDetail(selectedPekerjaanId);
         setRankingData(data);
+        setSelectedWinners([]); // Reset selection
         console.log('Ranking data loaded:', data);
       } catch (error) {
         console.error('Error loading ranking data:', error);
         setRankingData(null);
+        setSelectedWinners([]);
         setToastMessage({
           type: 'error',
           message: error instanceof Error ? error.message : 'Gagal memuat data ranking.'
@@ -73,6 +79,17 @@ const LihatRanking: React.FC = () => {
     setSelectedPekerjaanId(pekerjaanId);
   };
 
+  // Handle selection pelamar yang lolos
+  const handleWinnerSelection = (peringkat: number) => {
+    setSelectedWinners(prev => {
+      if (prev.includes(peringkat)) {
+        return prev.filter(p => p !== peringkat);
+      } else {
+        return [...prev, peringkat];
+      }
+    });
+  };
+
   // Prepare dropdown options untuk pekerjaan
   const pekerjaanOptions = [
     { value: '', label: 'Pilih Pekerjaan' },
@@ -89,36 +106,238 @@ const LihatRanking: React.FC = () => {
     return pekerjaan ? pekerjaan.namapekerjaan : '';
   };
 
-  // Export ranking data
-  const handleExportRanking = () => {
-    if (!rankingData) return;
+  // Export ke PDF HTML
+  const handleExportPDF = () => {
+    if (!rankingData || selectedWinners.length === 0) {
+      setToastMessage({
+        type: 'error',
+        message: 'Silakan pilih pelamar yang lolos terlebih dahulu.'
+      });
+      return;
+    }
     
-    // Simple CSV export
-    const csvHeaders = ['Peringkat', 'Nama Pelamar', 'No Pelamar', 'Email', 'Skor Akhir'];
-    const csvData = rankingData.ranking_summary.map((item: any, index: number) => {
-      const detail = rankingData.ranking_details.find((d: RankingDetail) => d.peringkat === item.peringkat);
-      return [
-        item.peringkat,
-        item.namapelamar,
-        detail?.pelamar.nopelamar || '',
-        detail?.pelamar.email || '',
-        item.hasil_akhir.toFixed(3)
-      ];
-    });
+    // Get selected winners data
+    const winnersData = rankingData.ranking_summary.filter((item: any) => 
+      selectedWinners.includes(item.peringkat)
+    );
     
-    const csvContent = [csvHeaders, ...csvData]
-      .map(row => row.map(field => `"${field}"`).join(','))
-      .join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Generate HTML content for PDF
+    const htmlContent = `
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hasil Seleksi - ${getSelectedPekerjaanName()}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #4CAF50;
+        }
+        .header h1 {
+            color: #2E7D32;
+            margin: 0 0 10px 0;
+            font-size: 28px;
+        }
+        .header h2 {
+            color: #388E3C;
+            margin: 0;
+            font-size: 20px;
+            font-weight: normal;
+        }
+        .congratulations {
+            background: linear-gradient(135deg, #E8F5E8, #C8E6C9);
+            border: 2px solid #4CAF50;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .congratulations h3 {
+            color: #1B5E20;
+            margin: 0 0 10px 0;
+            font-size: 22px;
+        }
+        .job-info {
+            background-color: #F5F5F5;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .ranking-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .ranking-table th {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 8px;
+            text-align: left;
+            font-weight: bold;
+        }
+        .ranking-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #ddd;
+        }
+        .ranking-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .ranking-table tbody tr:hover {
+            background-color: #E8F5E8;
+        }
+        .rank-number {
+            font-weight: bold;
+            color: #2E7D32;
+            font-size: 16px;
+        }
+        .winner-badge {
+            background-color: #4CAF50;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+        }
+        .summary-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .stat-box {
+            background-color: #E3F2FD;
+            border: 1px solid #2196F3;
+            border-radius: 6px;
+            padding: 15px;
+            text-align: center;
+            margin: 5px;
+            min-width: 120px;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1976D2;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+        @media print {
+            body { margin: 0; background: white; }
+            .container { box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 HASIL SELEKSI KARYAWAN</h1>
+            <h2>Sistem Profile Matching</h2>
+        </div>
+
+        <div class="congratulations">
+            <h3>🎉 SELAMAT KEPADA PELAMAR/KANDIDAT YANG LOLOS! 🎉</h3>
+            <p>Berdasarkan hasil perhitungan Profile Matching untuk posisi <strong>${getSelectedPekerjaanName()}</strong></p>
+        </div>
+
+        <div class="job-info">
+            <h4>📋 Informasi Seleksi:</h4>
+            <p><strong>Posisi:</strong> ${getSelectedPekerjaanName()}</p>
+            <p><strong>Tanggal Cetak:</strong> ${new Date().toLocaleDateString('id-ID', {
+              year: 'numeric',
+              month: 'long', 
+              day: 'numeric'
+            })}</p>
+            <p><strong>Total Pelamar Lolos:</strong> ${selectedWinners.length} dari ${rankingData.ranking_summary.length} pelamar</p>
+        </div>
+
+        <div class="summary-stats">
+            <div class="stat-box">
+                <div class="stat-number">${rankingData.perhitungan_summary.total_pelamar}</div>
+                <div class="stat-label">Total Pelamar</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">${rankingData.perhitungan_summary.total_kriteria}</div>
+                <div class="stat-label">Kriteria Penilaian</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">${selectedWinners.length}</div>
+                <div class="stat-label">Pelamar Lolos</div>
+            </div>
+        </div>
+
+        <h3>📊 Daftar Lengkap Ranking Pelamar</h3>
+        <table class="ranking-table">
+            <thead>
+                <tr>
+                    <th>Peringkat</th>
+                    <th>Nama Pelamar</th>
+                    <th>No Pelamar</th>
+                    <th>Email</th>
+                    <th>Skor Akhir</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rankingData.ranking_summary.map((item: any) => {
+                  const detail = rankingData.ranking_details.find((d: RankingDetail) => d.peringkat === item.peringkat);
+                  const isWinner = selectedWinners.includes(item.peringkat);
+                  return `
+                    <tr>
+                        <td class="rank-number">#${item.peringkat}</td>
+                        <td>${item.namapelamar}</td>
+                        <td>${detail?.pelamar.nopelamar || '-'}</td>
+                        <td>${detail?.pelamar.email || '-'}</td>
+                        <td><strong>${item.hasil_akhir.toFixed(3)}</strong></td>
+                        <td>${isWinner ? '<span class="winner-badge">LOLOS</span>' : '-'}</td>
+                    </tr>
+                  `;
+                }).join('')}
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <p>Dokumen ini dibuat secara otomatis oleh Sistem Profile Matching</p>
+            <p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+        </div>
+    </div>
+</body>
+</html>`;
+
+    // Create and download HTML file
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `ranking_${getSelectedPekerjaanName()}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `Hasil_Seleksi_${getSelectedPekerjaanName()}_${new Date().toISOString().split('T')[0]}.html`;
     link.click();
     
     setToastMessage({
       type: 'success',
-      message: 'Data ranking berhasil diekspor.'
+      message: `File HTML berhasil diekspor untuk ${selectedWinners.length} pelamar yang lolos.`
     });
   };
 
@@ -127,7 +346,7 @@ const LihatRanking: React.FC = () => {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">Lihat Ranking Pelamar</h1>
         <p className="text-gray-600 mt-1">
-          Lihat hasil ranking dan penilaian akhir pelamar berdasarkan perhitungan Profile Matching.
+          Lihat hasil ranking dan pilih pelamar yang lolos untuk diekspor sebagai dokumen resmi.
         </p>
       </div>
 
@@ -180,7 +399,7 @@ const LihatRanking: React.FC = () => {
                   <span className="font-medium">Pekerjaan Dipilih:</span> {getSelectedPekerjaanName()}
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
-                  Data ranking akan ditampilkan di bawah
+                  Pilih pelamar yang lolos dan export sebagai dokumen resmi
                 </p>
               </div>
             </div>
@@ -202,17 +421,23 @@ const LihatRanking: React.FC = () => {
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-gray-800">Ringkasan Ranking</h3>
-              <Button
-                variant="secondary"
-                onClick={handleExportRanking}
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                }
-              >
-                Export CSV
-              </Button>
+              <div className="flex items-center space-x-4">
+                <div className="text-sm text-gray-600">
+                  Pelamar Dipilih: <span className="font-bold text-green-600">{selectedWinners.length}</span>
+                </div>
+                <Button
+                  variant="primary"
+                  onClick={handleExportPDF}
+                  disabled={selectedWinners.length === 0}
+                  icon={
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                    </svg>
+                  }
+                >
+                  Export PDF HTML
+                </Button>
+              </div>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -236,9 +461,22 @@ const LihatRanking: React.FC = () => {
               </div>
               <div className="bg-orange-50 p-4 rounded-lg">
                 <div className="text-2xl font-bold text-orange-600">
-                  {rankingData.perhitungan_summary.completeness.is_complete ? '100%' : 'Partial'}
+                  {selectedWinners.length}
                 </div>
-                <div className="text-sm text-orange-600">Kelengkapan Data</div>
+                <div className="text-sm text-orange-600">Pelamar Lolos</div>
+              </div>
+            </div>
+
+            {/* Instructions */}
+            <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="flex items-start">
+                <svg className="h-5 w-5 text-yellow-600 mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <div className="text-sm text-yellow-700">
+                  <strong>Petunjuk:</strong> Centang kotak di samping nama pelamar yang dinyatakan lolos seleksi, 
+                  kemudian klik tombol "Export PDF HTML" untuk mengunduh dokumen resmi hasil seleksi.
+                </div>
               </div>
             </div>
           </div>
@@ -255,6 +493,9 @@ const LihatRanking: React.FC = () => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Pilih
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Peringkat
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -269,16 +510,22 @@ const LihatRanking: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Skor Akhir
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {rankingData.ranking_summary.map((item: any, index: number) => {
                     const detail = rankingData.ranking_details.find((d: RankingDetail) => d.peringkat === item.peringkat);
+                    const isSelected = selectedWinners.includes(item.peringkat);
                     return (
-                      <tr key={item.peringkat} className={index === 0 ? "bg-yellow-50" : ""}>
+                      <tr key={item.peringkat} className={isSelected ? "bg-green-50" : index === 0 ? "bg-yellow-50" : ""}>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleWinnerSelection(item.peringkat)}
+                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                          />
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             {index === 0 && (
@@ -302,17 +549,6 @@ const LihatRanking: React.FC = () => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-bold text-blue-600">{item.hasil_akhir.toFixed(3)}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                            index === 0 
-                              ? 'bg-green-100 text-green-800' 
-                              : index < 3 
-                                ? 'bg-blue-100 text-blue-800' 
-                                : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {index === 0 ? 'Terpilih' : index < 3 ? 'Kandidat' : 'Tidak Lolos'}
-                          </span>
                         </td>
                       </tr>
                     );
@@ -379,5 +615,4 @@ const LihatRanking: React.FC = () => {
     </div>
   );
 };
-
 export default LihatRanking;
