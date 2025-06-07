@@ -1,4 +1,4 @@
-// src/pages/Dashboard/Dashboard.tsx (bagian import)
+// src/pages/Dashboard/Dashboard.tsx (bagian import dan case)
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Sidebar from '../../components/organisms/Sidebar/Sidebar';
@@ -8,6 +8,7 @@ import DataPelamar from '../DataPelamar/DataPelamar';
 import DataSubKriteria from '../DataSubKriteria/DataSubKriteria';
 import DataKriteria from '../DataKriteria/DataKriteria';
 import ProsesProfileMatching from '../ProsesProfileMatching/ProsesProfileMatching';
+import HasilPerhitungan from '../HasilPerhitungan/HasilPerhitungan'; // Import baru
 import GantiPassword from '../GantiPassword/GantiPassword';
 import authService from '../../utils/dummyAuth';
 import { setAuthHeader } from '../../middleware/authMiddleware';
@@ -123,6 +124,8 @@ const Dashboard: React.FC = () => {
         return <DataSubKriteria />;
       case 'proses-matching':
         return <ProsesProfileMatching />;
+      case 'hasil-perhitungan':
+        return <HasilPerhitungan />; // Tambahkan case baru
       case 'ganti-password':
         return <GantiPassword />;
       default:

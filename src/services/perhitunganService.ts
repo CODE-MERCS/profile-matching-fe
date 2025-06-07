@@ -25,12 +25,24 @@ export interface PekerjaanForm {
   namapekerjaan: string;
 }
 
+// Interface untuk Pelamar dari response form
+export interface PelamarForm {
+  id_pelamar: number;
+  namapelamar: string;
+  nopelamar: string;
+  kode: string;
+}
+
 // Interface untuk data form perhitungan
 export interface PerhitunganFormData {
   pekerjaan: PekerjaanForm;
   kriterias: KriteriaForm[];
-  pelamars: any[];
-  existing_values: any;
+  pelamars: PelamarForm[];
+  existing_values: {
+    [pelamar_id: string]: {
+      [subkriteria_id: string]: number;
+    };
+  };
   conversion_info: {
     sangat_baik: string;
     baik: string;
@@ -52,17 +64,85 @@ export interface MatrixData {
   };
 }
 
-// Interface untuk bulk input request
-export interface BulkInputMatrixRequest {
+// Interface untuk bulk calculate request
+export interface BulkCalculateRequest {
   pekerjaan_id: number;
   matrix_data: MatrixData;
 }
 
-// Interface untuk bulk input response
-export interface BulkInputMatrixResponse {
+// Interface untuk kriteria scores dalam ranking details
+export interface KriteriaScore {
+  kriteria_id: number;
+  kriteria_name: string;
+  target: number;
+  gap: number;
+  ncf: number;
+  nsf: number;
+  total: number;
+}
+
+// Interface untuk final calculation details
+export interface FinalCalculationDetail {
+  kriteria_name: string;
+  total: number;
+  bobot_persen: number;
+  contribution: number;
+}
+
+// Interface untuk final calculation
+export interface FinalCalculation {
+  score: number;
+  formula: string;
+  details: {
+    [key: string]: FinalCalculationDetail;
+  };
+}
+
+// Interface untuk ranking detail
+export interface RankingDetail {
+  peringkat: number;
+  pelamar: {
+    id_pelamar: number;
+    namapelamar: string;
+    nopelamar: string;
+    email: string;
+  };
+  kriteria_scores: {
+    [key: string]: KriteriaScore;
+  };
+  final_calculation: FinalCalculation;
+}
+
+// Interface untuk ranking summary
+export interface RankingSummary {
+  peringkat: number;
+  namapelamar: string;
+  hasil_akhir: number;
+}
+
+// Interface untuk perhitungan summary
+export interface PerhitunganSummary {
+  total_pelamar: number;
+  total_kriteria: number;
+  total_detail_records: number;
+  total_agregat_records: number;
+  completeness: {
+    is_complete: boolean;
+    warnings: string[];
+  };
+}
+
+// Interface untuk bulk calculate response
+export interface BulkCalculateResponse {
   status: string;
   message: string;
-  data?: any;
+  data: {
+    pekerjaan: PekerjaanForm;
+    perhitungan_summary: PerhitunganSummary;
+    ranking_summary: RankingSummary[];
+    ranking_details: RankingDetail[];
+    tahapan_perhitungan: any; // Detailed calculation steps
+  };
 }
 
 // Helper function untuk mendapatkan token
@@ -109,22 +189,22 @@ export const perhitunganService = {
     }
   },
 
-  // Submit bulk input matrix data
-  async submitBulkInputMatrix(data: BulkInputMatrixRequest): Promise<BulkInputMatrixResponse> {
+  // Submit bulk calculate - mengganti bulk input matrix
+  async submitBulkCalculate(data: BulkCalculateRequest): Promise<BulkCalculateResponse> {
     try {
-      console.log('Submitting bulk input matrix:', data);
+      console.log('Submitting bulk calculate:', data);
       
-      const response = await axios.post<BulkInputMatrixResponse>(
-        `${API_URL}/api/perhitungan/bulk-input-matrix`,
+      const response = await axios.post<BulkCalculateResponse>(
+        `${API_URL}/api/perhitungan/bulk-calculate`,
         data,
         { headers: getAuthHeaders() }
       );
       
-      console.log('Bulk input matrix response:', response.data);
+      console.log('Bulk calculate response:', response.data);
       
       return response.data;
     } catch (error: any) {
-      console.error('Bulk input matrix error:', error.response?.data || error);
+      console.error('Bulk calculate error:', error.response?.data || error);
       
       if (error.response?.status === 401) {
         throw new Error('Sesi Anda telah berakhir. Silakan login kembali.');
@@ -138,7 +218,7 @@ export const perhitunganService = {
         throw new Error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
       }
       
-      throw new Error(error.response?.data?.message || 'Gagal menyimpan data matrix');
+      throw new Error(error.response?.data?.message || 'Gagal memproses perhitungan');
     }
   }
 };
