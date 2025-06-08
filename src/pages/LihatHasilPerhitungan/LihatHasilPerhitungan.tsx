@@ -89,6 +89,88 @@ const LihatHasilPerhitungan: React.FC = () => {
     return pekerjaan ? pekerjaan.namapekerjaan : '';
   };
 
+  // Helper function untuk mendapatkan dynamic CF/SF table keys
+  const getCfSfTableKeys = () => {
+    if (!perhitunganData?.tahapan_perhitungan) return [];
+    
+    const tahapan = perhitunganData.tahapan_perhitungan;
+    const cfSfTables = Object.keys(tahapan).filter(key => 
+      key.includes('cf_sf_kriteria_')
+    ).sort();
+    
+    console.log('Found CF/SF tables:', cfSfTables);
+    return cfSfTables;
+  };
+
+  // Helper function untuk mendapatkan informasi kriteria dan subkriteria
+  const getKriteriaInfo = () => {
+    if (!perhitunganData || !perhitunganData.tahapan_perhitungan) return null;
+
+    // Ambil informasi dari CF/SF tables untuk mendapatkan struktur yang tepat
+    const tahapan = perhitunganData.tahapan_perhitungan;
+    const kriteriaInfo: { [key: string]: { name: string; columns: string[] } } = {};
+
+    // Get dynamic CF/SF table keys
+    const cfSfTableKeys = getCfSfTableKeys();
+
+    // Extract dari tabel CF/SF untuk mendapatkan pembagian subkriteria yang tepat
+    cfSfTableKeys.forEach((tableKey, index) => {
+      if (tahapan[tableKey] && tahapan[tableKey].length > 0) {
+        const tableData = tahapan[tableKey][0];
+        const kriteriaName = tableData.kriteria_name;
+        
+        // Extract kolom subkriteria (yang mengandung S dan bukan core_factor/secondary_factor)
+        const subkriteriaColumns = Object.keys(tableData).filter(key => 
+          key.startsWith('S') && 
+          !key.includes('core_factor') && 
+          !key.includes('secondary_factor') &&
+          key !== 'kriteria_name' &&
+          key !== 'kriteria_id' &&
+          key !== 'nama_pelamar'
+        );
+
+        // Extract nomor subkriteria untuk mendapatkan kolom asli (S1, S2, dll)
+        const originalColumns = subkriteriaColumns.map(col => {
+          const match = col.match(/S(\d+)/);
+          return match ? `S${match[1]}` : col;
+        }).filter((col, index, arr) => arr.indexOf(col) === index); // Remove duplicates
+
+        kriteriaInfo[kriteriaName.toLowerCase()] = {
+          name: kriteriaName,
+          columns: originalColumns.sort((a, b) => {
+            const numA = parseInt(a.replace('S', ''));
+            const numB = parseInt(b.replace('S', ''));
+            return numA - numB;
+          })
+        };
+      }
+    });
+
+    return kriteriaInfo;
+  };
+
+  // Helper function untuk mendapatkan subkriteria berdasarkan kriteria
+  const getSubkriteriaByKriteria = (tableData: any[]) => {
+    if (!tableData || tableData.length === 0) return {};
+
+    const kriteriaInfo = getKriteriaInfo();
+    if (!kriteriaInfo) return {};
+
+    return kriteriaInfo;
+  };
+
+  // Get background color for kriteria
+  const getKriteriaColor = (index: number) => {
+    const colors = ['#f44336', '#2196F3', '#4CAF50', '#FF9800', '#9C27B0']; // Red, Blue, Green, Orange, Purple
+    return colors[index % colors.length];
+  };
+
+  // Get light background color for kriteria
+  const getLightKriteriaColor = (index: number) => {
+    const colors = ['#ffebee', '#e3f2fd', '#e8f5e8', '#fff3e0', '#f3e5f5']; // Light versions
+    return colors[index % colors.length];
+  };
+
   // Export detailed calculation to HTML
   const handleExportDetailedCalculation = () => {
     if (!perhitunganData) {
@@ -267,7 +349,7 @@ const LihatHasilPerhitungan: React.FC = () => {
         </div>
 
         ${generateTabelInputValues(tahapan)}
-        ${generateTabelTargetDanGap(tahapan)}
+        ${generateTabelGap(tahapan)}
         ${generateTabelBobotNilai(tahapan)}
         ${generateTabelCoreFactorSecondaryFactor(tahapan)}
         ${generateTabelHasilAkhir(tahapan)}
@@ -281,15 +363,15 @@ const LihatHasilPerhitungan: React.FC = () => {
 </html>`;
   };
 
-  // Generate table for input values
+  // Generate table for input values with dynamic kriteria
   const generateTabelInputValues = (tahapan: any) => {
     if (!tahapan?.tabel_1_input_values) return '';
     
     const data = tahapan.tabel_1_input_values;
     if (data.length === 0) return '';
 
-    // Get all subkriteria columns dynamically
-    const subkriteriaColumns = Object.keys(data[0]).filter(key => key !== 'nama_pelamar');
+    const kriteriaGroups = getSubkriteriaByKriteria(data);
+    const kriteriaKeys = Object.keys(kriteriaGroups);
     
     return `
         <div class="section">
@@ -297,15 +379,34 @@ const LihatHasilPerhitungan: React.FC = () => {
             <table class="calculation-table">
                 <thead>
                     <tr>
-                        <th>Nama Pelamar</th>
-                        ${subkriteriaColumns.map(col => `<th>${col}</th>`).join('')}
+                        <th rowspan="2">Nama Pelamar</th>
+                        ${kriteriaKeys.map((key, index) => {
+                          const kriteria = kriteriaGroups[key];
+                          const bgColor = getKriteriaColor(index);
+                          return `<th colspan="${kriteria.columns.length}" style="background-color: ${bgColor};">${kriteria.name}</th>`;
+                        }).join('')}
+                    </tr>
+                    <tr>
+                        ${kriteriaKeys.map((key, index) => {
+                          const kriteria = kriteriaGroups[key];
+                          const bgColor = getKriteriaColor(index);
+                          return kriteria.columns.map(col => 
+                            `<th style="background-color: ${bgColor}; color: white;">${col}</th>`
+                          ).join('');
+                        }).join('')}
                     </tr>
                 </thead>
                 <tbody>
                     ${data.map((row: any) => `
                         <tr>
                             <td class="pelamar-name">${row.nama_pelamar}</td>
-                            ${subkriteriaColumns.map(col => `<td>${row[col]}</td>`).join('')}
+                            ${kriteriaKeys.map((key, index) => {
+                              const kriteria = kriteriaGroups[key];
+                              const bgColor = getLightKriteriaColor(index);
+                              return kriteria.columns.map(col => 
+                                `<td style="background-color: ${bgColor};">${row[col]}</td>`
+                              ).join('');
+                            }).join('')}
                         </tr>
                     `).join('')}
                 </tbody>
@@ -314,31 +415,50 @@ const LihatHasilPerhitungan: React.FC = () => {
     `;
   };
 
-  // Generate table for target and gap
-  const generateTabelTargetDanGap = (tahapan: any) => {
-    if (!tahapan?.tabel_2_target_dan_gap) return '';
+  // Generate table for gap calculation
+  const generateTabelGap = (tahapan: any) => {
+    if (!tahapan?.tabel_2_gap_calculation) return '';
     
-    const data = tahapan.tabel_2_target_dan_gap;
+    const data = tahapan.tabel_2_gap_calculation;
     if (data.length === 0) return '';
 
-    const subkriteriaColumns = Object.keys(data[0]).filter(key => key !== 'nama_pelamar');
+    const kriteriaGroups = getSubkriteriaByKriteria(data);
+    const kriteriaKeys = Object.keys(kriteriaGroups);
     
     return `
         <div class="section">
-            <div class="section-title">Tabel 2: Nilai Target dan GAP</div>
+            <div class="section-title">Tabel 2: Perhitungan GAP</div>
             <table class="calculation-table">
                 <thead>
                     <tr>
-                        <th>Nama Pelamar</th>
-                        ${subkriteriaColumns.map(col => `<th>${col}</th>`).join('')}
+                        <th rowspan="2">Nama Pelamar</th>
+                        ${kriteriaKeys.map((key, index) => {
+                          const kriteria = kriteriaGroups[key];
+                          const bgColor = getKriteriaColor(index);
+                          return `<th colspan="${kriteria.columns.length}" style="background-color: ${bgColor};">${kriteria.name}</th>`;
+                        }).join('')}
+                    </tr>
+                    <tr>
+                        ${kriteriaKeys.map((key, index) => {
+                          const kriteria = kriteriaGroups[key];
+                          const bgColor = getKriteriaColor(index);
+                          return kriteria.columns.map(col => 
+                            `<th style="background-color: ${bgColor}; color: white;">${col}</th>`
+                          ).join('');
+                        }).join('')}
                     </tr>
                 </thead>
                 <tbody>
-                    ${data.map((row: any, index: number) => `
-                        <tr class="${row.nama_pelamar.includes('Target') ? 'target-row' : 
-                                   row.nama_pelamar.includes('GAP') ? 'gap-row' : ''}">
+                    ${data.map((row: any) => `
+                        <tr>
                             <td class="pelamar-name">${row.nama_pelamar}</td>
-                            ${subkriteriaColumns.map(col => `<td>${row[col]}</td>`).join('')}
+                            ${kriteriaKeys.map((key, index) => {
+                              const kriteria = kriteriaGroups[key];
+                              const bgColor = getLightKriteriaColor(index);
+                              return kriteria.columns.map(col => 
+                                `<td style="background-color: ${bgColor};">${row[col]}</td>`
+                              ).join('');
+                            }).join('')}
                         </tr>
                     `).join('')}
                 </tbody>
@@ -347,14 +467,15 @@ const LihatHasilPerhitungan: React.FC = () => {
     `;
   };
 
-  // Generate table for bobot nilai
+  // Generate table for bobot nilai with dynamic kriteria
   const generateTabelBobotNilai = (tahapan: any) => {
     if (!tahapan?.tabel_3_bobot_nilai) return '';
     
     const data = tahapan.tabel_3_bobot_nilai;
     if (data.length === 0) return '';
 
-    const subkriteriaColumns = Object.keys(data[0]).filter(key => key !== 'nama_pelamar');
+    const kriteriaGroups = getSubkriteriaByKriteria(data);
+    const kriteriaKeys = Object.keys(kriteriaGroups);
     
     return `
         <div class="section">
@@ -362,15 +483,34 @@ const LihatHasilPerhitungan: React.FC = () => {
             <table class="calculation-table">
                 <thead>
                     <tr>
-                        <th>Nama Pelamar</th>
-                        ${subkriteriaColumns.map(col => `<th>${col}</th>`).join('')}
+                        <th rowspan="2">Nama Pelamar</th>
+                        ${kriteriaKeys.map((key, index) => {
+                          const kriteria = kriteriaGroups[key];
+                          const bgColor = getKriteriaColor(index);
+                          return `<th colspan="${kriteria.columns.length}" style="background-color: ${bgColor};">${kriteria.name}</th>`;
+                        }).join('')}
+                    </tr>
+                    <tr>
+                        ${kriteriaKeys.map((key, index) => {
+                          const kriteria = kriteriaGroups[key];
+                          const bgColor = getKriteriaColor(index);
+                          return kriteria.columns.map(col => 
+                            `<th style="background-color: ${bgColor}; color: white;">${col}</th>`
+                          ).join('');
+                        }).join('')}
                     </tr>
                 </thead>
                 <tbody>
                     ${data.map((row: any) => `
                         <tr>
                             <td class="pelamar-name">${row.nama_pelamar}</td>
-                            ${subkriteriaColumns.map(col => `<td>${row[col]}</td>`).join('')}
+                            ${kriteriaKeys.map((key, index) => {
+                              const kriteria = kriteriaGroups[key];
+                              const bgColor = getLightKriteriaColor(index);
+                              return kriteria.columns.map(col => 
+                                `<td style="background-color: ${bgColor}; font-weight: bold;">${row[col]}</td>`
+                              ).join('');
+                            }).join('')}
                         </tr>
                     `).join('')}
                 </tbody>
@@ -379,12 +519,15 @@ const LihatHasilPerhitungan: React.FC = () => {
     `;
   };
 
-  // Generate tables for Core Factor and Secondary Factor
+  // Generate tables for Core Factor and Secondary Factor - Dynamic
   const generateTabelCoreFactorSecondaryFactor = (tahapan: any) => {
     let content = '';
     
-    // Generate table for each kriteria
-    ['tabel_4_cf_sf_kriteria_1', 'tabel_5_cf_sf_kriteria_2', 'tabel_6_cf_sf_kriteria_3'].forEach((tableKey, index) => {
+    // Get dynamic CF/SF table keys
+    const cfSfTableKeys = getCfSfTableKeys();
+    
+    // Generate table for each kriteria dynamically
+    cfSfTableKeys.forEach((tableKey, index) => {
       if (tahapan[tableKey]) {
         const data = tahapan[tableKey];
         if (data.length === 0) return;
@@ -421,12 +564,18 @@ const LihatHasilPerhitungan: React.FC = () => {
     return content;
   };
 
-  // Generate table for final results
+  // Generate table for final results - Dynamic kriteria headers
   const generateTabelHasilAkhir = (tahapan: any) => {
     if (!tahapan?.tabel_7_hasil_akhir) return '';
     
     const data = tahapan.tabel_7_hasil_akhir;
     if (data.length === 0) return '';
+
+    // Get all columns except nama_pelamar, hasil_akhir, and peringkat
+    const sampleRow = data[0];
+    const kriteriaColumns = Object.keys(sampleRow).filter(key => 
+      !['nama_pelamar', 'hasil_akhir', 'peringkat'].includes(key)
+    );
 
     return `
         <div class="section">
@@ -435,9 +584,7 @@ const LihatHasilPerhitungan: React.FC = () => {
                 <thead>
                     <tr>
                         <th>Nama Pelamar</th>
-                        <th>NA (Administrasi)</th>
-                        <th>NWA (Wawancara)</th>
-                        <th>NKO (Kompetensi)</th>
+                        ${kriteriaColumns.map(col => `<th>${col.replace('nilai_', '').replace(/_/g, ' ').toUpperCase()}</th>`).join('')}
                         <th>Hasil Akhir</th>
                         <th>Peringkat</th>
                     </tr>
@@ -446,11 +593,9 @@ const LihatHasilPerhitungan: React.FC = () => {
                     ${data.map((row: any, index: number) => `
                         <tr style="${index === 0 ? 'background-color: #FFF3E0; font-weight: bold;' : ''}">
                             <td class="pelamar-name">${row.nama_pelamar}</td>
-                            <td>${row.na}</td>
-                            <td>${row.nwa}</td>
-                            <td>${row.nko}</td>
-                            <td style="font-weight: bold; color: #1976D2;">${row.hasil_akhir.toFixed(3)}</td>
-                            <td>${index + 1}</td>
+                            ${kriteriaColumns.map(col => `<td>${row[col]}</td>`).join('')}
+                            <td style="font-weight: bold; color: #1976D2;">${typeof row.hasil_akhir === 'number' ? row.hasil_akhir.toFixed(3) : row.hasil_akhir}</td>
+                            <td>${row.peringkat || index + 1}</td>
                         </tr>
                     `).join('')}
                 </tbody>
@@ -615,50 +760,86 @@ const LihatHasilPerhitungan: React.FC = () => {
                     <h3 className="text-lg font-medium text-blue-800">
                       Tabel 1: Input Nilai Pelamar
                     </h3>
+                    <p className="text-sm text-blue-600 mt-1">
+                      Nilai yang diinputkan untuk setiap pelamar pada setiap subkriteria
+                    </p>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Nama Pelamar
-                          </th>
-                          {Object.keys(perhitunganData.tahapan_perhitungan.tabel_1_input_values[0])
-                            .filter(key => key !== 'nama_pelamar')
-                            .map(subkriteria => (
-                              <th key={subkriteria} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {subkriteria}
-                              </th>
-                            ))}
-                        </tr>
+                        {(() => {
+                          const data = perhitunganData.tahapan_perhitungan.tabel_1_input_values;
+                          const kriteriaGroups = getSubkriteriaByKriteria(data);
+                          const kriteriaKeys = Object.keys(kriteriaGroups);
+                          
+                          return (
+                            <>
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300">
+                                  Nama Pelamar
+                                </th>
+                                {kriteriaKeys.map((key, index) => {
+                                  const kriteria = kriteriaGroups[key];
+                                  const bgColor = getKriteriaColor(index);
+                                  return (
+                                    <th key={key} colSpan={kriteria.columns.length} 
+                                        className="px-4 py-2 text-center text-xs font-medium text-white uppercase tracking-wider border-r border-gray-300"
+                                        style={{ backgroundColor: bgColor }}>
+                                      {kriteria.name}
+                                    </th>
+                                  );
+                                })}
+                              </tr>
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300"></th>
+                                {kriteriaKeys.map((key, index) => {
+                                  const kriteria = kriteriaGroups[key];
+                                  return kriteria.columns.map(col => (
+                                    <th key={col} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                      {col}
+                                    </th>
+                                  ));
+                                })}
+                              </tr>
+                            </>
+                          );
+                        })()}
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {perhitunganData.tahapan_perhitungan.tabel_1_input_values.map((row: any, index: number) => (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-green-50">
-                              {row.nama_pelamar}
-                            </td>
-                            {Object.keys(row)
-                              .filter(key => key !== 'nama_pelamar')
-                              .map(subkriteria => (
-                                <td key={subkriteria} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                                  {row[subkriteria]}
-                                </td>
-                              ))}
-                          </tr>
-                        ))}
+                        {perhitunganData.tahapan_perhitungan.tabel_1_input_values.map((row: any, index: number) => {
+                          const kriteriaGroups = getSubkriteriaByKriteria(perhitunganData.tahapan_perhitungan.tabel_1_input_values);
+                          const kriteriaKeys = Object.keys(kriteriaGroups);
+                          
+                          return (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 bg-green-50 border-r border-gray-300">
+                                {row.nama_pelamar}
+                              </td>
+                              {kriteriaKeys.map((key, kriteriaIndex) => {
+                                const kriteria = kriteriaGroups[key];
+                                const bgColor = getLightKriteriaColor(kriteriaIndex);
+                                return kriteria.columns.map(col => (
+                                  <td key={col} className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 text-center border-r border-gray-200"
+                                      style={{ backgroundColor: bgColor }}>
+                                    {row[col]}
+                                  </td>
+                                ));
+                              })}
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
                 </div>
               )}
 
-              {/* Table 2: Target dan GAP */}
-              {perhitunganData.tahapan_perhitungan.tabel_2_target_dan_gap && (
+              {/* Table 2: GAP Calculation */}
+              {perhitunganData.tahapan_perhitungan.tabel_2_gap_calculation && (
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                   <div className="px-6 py-4 border-b border-gray-200 bg-orange-50">
                     <h3 className="text-lg font-medium text-orange-800">
-                      Tabel 2: Nilai Target dan GAP
+                      Tabel 2: Perhitungan GAP
                     </h3>
                     <p className="text-sm text-orange-600 mt-1">
                       GAP = Nilai Pelamar - Nilai Target
@@ -667,49 +848,78 @@ const LihatHasilPerhitungan: React.FC = () => {
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Nama Pelamar
-                          </th>
-                          {Object.keys(perhitunganData.tahapan_perhitungan.tabel_2_target_dan_gap[0])
-                            .filter(key => key !== 'nama_pelamar')
-                            .map(subkriteria => (
-                              <th key={subkriteria} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {subkriteria}
-                              </th>
-                            ))}
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {perhitunganData.tahapan_perhitungan.tabel_2_target_dan_gap.map((row: any, index: number) => {
-                          const isTarget = row.nama_pelamar.includes('Target');
-                          const isGap = row.nama_pelamar.includes('GAP');
+                        {(() => {
+                          const data = perhitunganData.tahapan_perhitungan.tabel_2_gap_calculation;
+                          const kriteriaGroups = getSubkriteriaByKriteria(data);
+                          const kriteriaKeys = Object.keys(kriteriaGroups);
                           
                           return (
-                            <tr key={index} className={
-                              isTarget ? "bg-yellow-50" : 
-                              isGap ? "bg-red-50" : 
-                              "hover:bg-gray-50"
-                            }>
-                              <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 ${
-                                isTarget ? 'bg-yellow-100' : 
-                                isGap ? 'bg-red-100' : 
-                                'bg-green-50'
-                              }`}>
+                            <>
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300">
+                                  Nama Pelamar
+                                </th>
+                                {kriteriaKeys.map((key, index) => {
+                                  const kriteria = kriteriaGroups[key];
+                                  const bgColor = getKriteriaColor(index);
+                                  return (
+                                    <th key={key} colSpan={kriteria.columns.length} 
+                                        className="px-4 py-2 text-center text-xs font-medium text-white uppercase tracking-wider border-r border-gray-300"
+                                        style={{ backgroundColor: bgColor }}>
+                                      {kriteria.name}
+                                    </th>
+                                  );
+                                })}
+                              </tr>
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300"></th>
+                                {kriteriaKeys.map((key, index) => {
+                                  const kriteria = kriteriaGroups[key];
+                                  return kriteria.columns.map(col => (
+                                    <th key={col} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                      {col}
+                                    </th>
+                                  ));
+                                })}
+                              </tr>
+                            </>
+                          );
+                        })()}
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {perhitunganData.tahapan_perhitungan.tabel_2_gap_calculation.map((row: any, index: number) => {
+                          const kriteriaGroups = getSubkriteriaByKriteria(perhitunganData.tahapan_perhitungan.tabel_2_gap_calculation);
+                          const kriteriaKeys = Object.keys(kriteriaGroups);
+                          
+                          return (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 bg-green-50 border-r border-gray-300">
                                 {row.nama_pelamar}
                               </td>
-                              {Object.keys(row)
-                                .filter(key => key !== 'nama_pelamar')
-                                .map(subkriteria => (
-                                  <td key={subkriteria} className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
-                                    isGap && row[subkriteria] < 0 ? 'text-red-600 font-bold' :
-                                    isGap && row[subkriteria] > 0 ? 'text-green-600 font-bold' :
-                                    isTarget ? 'text-orange-800 font-bold' :
-                                    'text-gray-900'
-                                  }`}>
-                                    {row[subkriteria]}
-                                  </td>
-                                ))}
+                              {kriteriaKeys.map((key, kriteriaIndex) => {
+                                const kriteria = kriteriaGroups[key];
+                                return kriteria.columns.map(col => {
+                                  let cellClass = "px-2 py-3 whitespace-nowrap text-sm text-center border-r border-gray-200";
+                                  let cellStyle: any = {};
+                                  
+                                  if (row[col] < 0) {
+                                    cellClass += " text-red-600 font-bold";
+                                    cellStyle.backgroundColor = "#fecaca"; // red-200
+                                  } else if (row[col] > 0) {
+                                    cellClass += " text-green-600 font-bold";
+                                    cellStyle.backgroundColor = "#bbf7d0"; // green-200
+                                  } else {
+                                    cellClass += " text-gray-900";
+                                    cellStyle.backgroundColor = getLightKriteriaColor(kriteriaIndex);
+                                  }
+                                  
+                                  return (
+                                    <td key={col} className={cellClass} style={cellStyle}>
+                                      {row[col]}
+                                    </td>
+                                  );
+                                });
+                              })}
                             </tr>
                           );
                         })}
@@ -733,98 +943,134 @@ const LihatHasilPerhitungan: React.FC = () => {
                   <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Nama Pelamar
-                          </th>
-                          {Object.keys(perhitunganData.tahapan_perhitungan.tabel_3_bobot_nilai[0])
-                            .filter(key => key !== 'nama_pelamar')
-                            .map(subkriteria => (
-                              <th key={subkriteria} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {subkriteria}
-                              </th>
-                            ))}
-                        </tr>
+                        {(() => {
+                          const data = perhitunganData.tahapan_perhitungan.tabel_3_bobot_nilai;
+                          const kriteriaGroups = getSubkriteriaByKriteria(data);
+                          const kriteriaKeys = Object.keys(kriteriaGroups);
+                          
+                          return (
+                            <>
+                              <tr>
+                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300">
+                                  Nama Pelamar
+                                </th>
+                                {kriteriaKeys.map((key, index) => {
+                                  const kriteria = kriteriaGroups[key];
+                                  const bgColor = getKriteriaColor(index);
+                                  return (
+                                    <th key={key} colSpan={kriteria.columns.length} 
+                                        className="px-4 py-2 text-center text-xs font-medium text-white uppercase tracking-wider border-r border-gray-300"
+                                        style={{ backgroundColor: bgColor }}>
+                                      {kriteria.name}
+                                    </th>
+                                  );
+                                })}
+                              </tr>
+                              <tr>
+                                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300"></th>
+                                {kriteriaKeys.map((key, index) => {
+                                  const kriteria = kriteriaGroups[key];
+                                  return kriteria.columns.map(col => (
+                                    <th key={col} className="px-2 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-200">
+                                      {col}
+                                    </th>
+                                  ));
+                                })}
+                              </tr>
+                            </>
+                          );
+                        })()}
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {perhitunganData.tahapan_perhitungan.tabel_3_bobot_nilai.map((row: any, index: number) => (
-                          <tr key={index} className="hover:bg-gray-50">
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-green-50">
-                              {row.nama_pelamar}
-                            </td>
-                            {Object.keys(row)
-                              .filter(key => key !== 'nama_pelamar')
-                              .map(subkriteria => (
-                                <td key={subkriteria} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center font-medium">
-                                  {row[subkriteria]}
-                                </td>
-                              ))}
-                          </tr>
-                        ))}
+                        {perhitunganData.tahapan_perhitungan.tabel_3_bobot_nilai.map((row: any, index: number) => {
+                          const kriteriaGroups = getSubkriteriaByKriteria(perhitunganData.tahapan_perhitungan.tabel_3_bobot_nilai);
+                          const kriteriaKeys = Object.keys(kriteriaGroups);
+                          
+                          return (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 bg-green-50 border-r border-gray-300">
+                                {row.nama_pelamar}
+                              </td>
+                              {kriteriaKeys.map((key, kriteriaIndex) => {
+                                const kriteria = kriteriaGroups[key];
+                                const bgColor = getLightKriteriaColor(kriteriaIndex);
+                                return kriteria.columns.map(col => (
+                                  <td key={col} className="px-2 py-3 whitespace-nowrap text-sm text-gray-900 text-center font-medium border-r border-gray-200"
+                                      style={{ backgroundColor: bgColor }}>
+                                    {row[col]}
+                                  </td>
+                                ));
+                              })}
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
                 </div>
               )}
 
-              {/* Tables 4-6: Core Factor & Secondary Factor */}
-              {['tabel_4_cf_sf_kriteria_1', 'tabel_5_cf_sf_kriteria_2', 'tabel_6_cf_sf_kriteria_3'].map((tableKey, tableIndex) => {
-                const tableData = perhitunganData.tahapan_perhitungan[tableKey];
-                if (!tableData || tableData.length === 0) return null;
+              {/* Tables 4-6: Core Factor & Secondary Factor - Dynamic */}
+              {(() => {
+                const cfSfTableKeys = getCfSfTableKeys();
+                return cfSfTableKeys.map((tableKey, tableIndex) => {
+                  const tableData = perhitunganData.tahapan_perhitungan[tableKey];
+                  if (!tableData || tableData.length === 0) return null;
 
-                const kriteriaName = tableData[0]?.kriteria_name || `Kriteria ${tableIndex + 1}`;
-                const columns = Object.keys(tableData[0]).filter(key => 
-                  !['nama_pelamar', 'kriteria_name', 'kriteria_id'].includes(key)
-                );
+                  const kriteriaName = tableData[0]?.kriteria_name || `Kriteria ${tableIndex + 1}`;
+                  const columns = Object.keys(tableData[0]).filter(key => 
+                    !['nama_pelamar', 'kriteria_name', 'kriteria_id'].includes(key)
+                  );
 
-                return (
-                  <div key={tableKey} className="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-200 bg-indigo-50">
-                      <h3 className="text-lg font-medium text-indigo-800">
-                        Tabel {tableIndex + 4}: Core Factor & Secondary Factor - {kriteriaName}
-                      </h3>
-                      <p className="text-sm text-indigo-600 mt-1">
-                        CF = 60% dari total, SF = 40% dari total
-                      </p>
-                    </div>
-                    <div className="overflow-x-auto">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                              Nama Pelamar
-                            </th>
-                            {columns.map(col => (
-                              <th key={col} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {col.replace('_', ' ').toUpperCase()}
+                  return (
+                    <div key={tableKey} className="bg-white rounded-lg shadow-sm overflow-hidden">
+                      <div className="px-6 py-4 border-b border-gray-200 bg-indigo-50">
+                        <h3 className="text-lg font-medium text-indigo-800">
+                          Tabel {tableIndex + 4}: Core Factor & Secondary Factor - {kriteriaName}
+                        </h3>
+                        <p className="text-sm text-indigo-600 mt-1">
+                          CF = 60% dari total, SF = 40% dari total
+                        </p>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full divide-y divide-gray-200">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Nama Pelamar
                               </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {tableData.map((row: any, index: number) => (
-                            <tr key={index} className="hover:bg-gray-50">
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-green-50">
-                                {row.nama_pelamar}
-                              </td>
                               {columns.map(col => (
-                                <td key={col} className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
-                                  col.includes('core_factor') || col.includes('secondary_factor') ? 
-                                  'font-bold text-blue-600' : 'text-gray-900'
-                                }`}>
-                                  {row[col]}
-                                </td>
+                                <th key={col} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                  {col.replace('_', ' ').toUpperCase()}
+                                </th>
                               ))}
                             </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {tableData.map((row: any, index: number) => (
+                              <tr key={index} className="hover:bg-gray-50">
+                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-green-50">
+                                  {row.nama_pelamar}
+                                </td>
+                                {columns.map(col => (
+                                  <td key={col} className={`px-6 py-4 whitespace-nowrap text-sm text-center ${
+                                    col.includes('core_factor') || col.includes('secondary_factor') ? 
+                                    'font-bold text-blue-600' : 'text-gray-900'
+                                  }`}>
+                                    {row[col]}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                });
+              })()}
 
-              {/* Table 7: Hasil Akhir */}
+              {/* Table 7: Hasil Akhir - Dynamic Headers */}
               {perhitunganData.tahapan_perhitungan.tabel_7_hasil_akhir && (
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                   <div className="px-6 py-4 border-b border-gray-200 bg-green-50">
@@ -832,7 +1078,7 @@ const LihatHasilPerhitungan: React.FC = () => {
                       Tabel 7: Hasil Akhir Perhitungan
                     </h3>
                     <p className="text-sm text-green-600 mt-1">
-                      Hasil akhir berdasarkan bobot kriteria: Administrasi (25%), Wawancara (25%), Kompetensi (50%)
+                      Hasil akhir berdasarkan bobot kriteria yang telah ditentukan
                     </p>
                   </div>
                   <div className="overflow-x-auto">
@@ -842,15 +1088,19 @@ const LihatHasilPerhitungan: React.FC = () => {
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Nama Pelamar
                           </th>
-                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            NA (Administrasi)
-                          </th>
-                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            NWA (Wawancara)
-                          </th>
-                          <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            NKO (Kompetensi)
-                          </th>
+                          {(() => {
+                            const data = perhitunganData.tahapan_perhitungan.tabel_7_hasil_akhir;
+                            const sampleRow = data[0];
+                            const columns = Object.keys(sampleRow).filter(key => 
+                              !['nama_pelamar', 'hasil_akhir', 'peringkat'].includes(key)
+                            );
+                            
+                            return columns.map(col => (
+                              <th key={col} className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {col.replace('nilai_', '').replace(/_/g, ' ').toUpperCase()}
+                              </th>
+                            ));
+                          })()}
                           <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Hasil Akhir
                           </th>
@@ -860,41 +1110,43 @@ const LihatHasilPerhitungan: React.FC = () => {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {perhitunganData.tahapan_perhitungan.tabel_7_hasil_akhir.map((row: any, index: number) => (
-                          <tr key={index} className={index === 0 ? "bg-yellow-50" : "hover:bg-gray-50"}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-green-50">
-                              {row.nama_pelamar}
-                              {index === 0 && (
-                                <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                                  🏆 Terbaik
+                        {perhitunganData.tahapan_perhitungan.tabel_7_hasil_akhir.map((row: any, index: number) => {
+                          const columns = Object.keys(row).filter(key => 
+                            !['nama_pelamar', 'hasil_akhir', 'peringkat'].includes(key)
+                          );
+                          
+                          return (
+                            <tr key={index} className={index === 0 ? "bg-yellow-50" : "hover:bg-gray-50"}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 bg-green-50">
+                                {row.nama_pelamar}
+                                {index === 0 && (
+                                  <span className="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                    🏆 Terbaik
+                                  </span>
+                                )}
+                              </td>
+                              {columns.map(col => (
+                                <td key={col} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                                  {row[col]}
+                                </td>
+                              ))}
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                <span className={`font-bold text-lg ${index === 0 ? 'text-green-600' : 'text-blue-600'}`}>
+                                  {typeof row.hasil_akhir === 'number' ? row.hasil_akhir.toFixed(3) : row.hasil_akhir}
                                 </span>
-                              )}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                              {row.na}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                              {row.nwa}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
-                              {row.nko}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                              <span className={`font-bold text-lg ${index === 0 ? 'text-green-600' : 'text-blue-600'}`}>
-                                {typeof row.hasil_akhir === 'number' ? row.hasil_akhir.toFixed(3) : row.hasil_akhir}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                index === 0 ? 'bg-green-100 text-green-800' :
-                                index < 3 ? 'bg-blue-100 text-blue-800' :
-                                'bg-gray-100 text-gray-800'
-                              }`}>
-                                #{index + 1}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  index === 0 ? 'bg-green-100 text-green-800' :
+                                  index < 3 ? 'bg-blue-100 text-blue-800' :
+                                  'bg-gray-100 text-gray-800'
+                                }`}>
+                                  #{row.peringkat || index + 1}
+                                </span>
+                              </td>
+                            </tr>
+                          );
+                        })}
                       </tbody>
                     </table>
                   </div>
@@ -916,7 +1168,7 @@ const LihatHasilPerhitungan: React.FC = () => {
                 <div className="mt-2 text-sm text-blue-700">
                   <ul className="list-disc list-inside space-y-1">
                     <li><strong>Tabel 1:</strong> Nilai input asli dari setiap pelamar untuk setiap subkriteria</li>
-                    <li><strong>Tabel 2:</strong> Nilai target dan GAP (selisih nilai pelamar dengan target)</li>
+                    <li><strong>Tabel 2:</strong> Perhitungan GAP (selisih nilai pelamar dengan target)</li>
                     <li><strong>Tabel 3:</strong> Konversi nilai GAP menjadi bobot nilai (1-5) berdasarkan tabel Profile Matching</li>
                     <li><strong>Tabel 4-6:</strong> Pengelompokan Core Factor (60%) dan Secondary Factor (40%) per kriteria</li>
                     <li><strong>Tabel 7:</strong> Hasil akhir dengan formula pembobotan kriteria untuk menentukan ranking</li>

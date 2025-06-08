@@ -106,6 +106,18 @@ const LihatRanking: React.FC = () => {
     return pekerjaan ? pekerjaan.namapekerjaan : '';
   };
 
+  // Helper function untuk mendapatkan nama kriteria dari tabel hasil akhir (dynamic)
+  const getKriteriaColumns = () => {
+    if (!rankingData?.tahapan_perhitungan?.tabel_7_hasil_akhir || rankingData.tahapan_perhitungan.tabel_7_hasil_akhir.length === 0) {
+      return [];
+    }
+
+    const sampleRow = rankingData.tahapan_perhitungan.tabel_7_hasil_akhir[0];
+    return Object.keys(sampleRow).filter(key => 
+      !['nama_pelamar', 'hasil_akhir', 'peringkat'].includes(key) && key.startsWith('nilai_')
+    );
+  };
+
   // Export ke PDF HTML
   const handleExportPDF = () => {
     if (!rankingData || selectedWinners.length === 0) {
@@ -120,6 +132,9 @@ const LihatRanking: React.FC = () => {
     const winnersData = rankingData.ranking_summary.filter((item: any) => 
       selectedWinners.includes(item.peringkat)
     );
+    
+    // Get kriteria columns dynamically
+    const kriteriaColumns = getKriteriaColumns();
     
     // Generate HTML content for PDF
     const htmlContent = `
@@ -298,6 +313,9 @@ const LihatRanking: React.FC = () => {
                     <th>Nama Pelamar</th>
                     <th>No Pelamar</th>
                     <th>Email</th>
+                    ${kriteriaColumns.map(col => 
+                      `<th>${col.replace('nilai_', '').replace(/_/g, ' ').toUpperCase()}</th>`
+                    ).join('')}
                     <th>Skor Akhir</th>
                     <th>Status</th>
                 </tr>
@@ -306,12 +324,19 @@ const LihatRanking: React.FC = () => {
                 ${rankingData.ranking_summary.map((item: any) => {
                   const detail = rankingData.ranking_details.find((d: RankingDetail) => d.peringkat === item.peringkat);
                   const isWinner = selectedWinners.includes(item.peringkat);
+                  const hasilAkhirRow = rankingData.tahapan_perhitungan?.tabel_7_hasil_akhir?.find((row: any) => 
+                    row.nama_pelamar === item.namapelamar
+                  );
+                  
                   return `
                     <tr>
                         <td class="rank-number">#${item.peringkat}</td>
                         <td>${item.namapelamar}</td>
                         <td>${detail?.pelamar.nopelamar || '-'}</td>
                         <td>${detail?.pelamar.email || '-'}</td>
+                        ${kriteriaColumns.map(col => 
+                          `<td>${hasilAkhirRow ? hasilAkhirRow[col] : '-'}</td>`
+                        ).join('')}
                         <td><strong>${item.hasil_akhir.toFixed(3)}</strong></td>
                         <td>${isWinner ? '<span class="winner-badge">LOLOS</span>' : '-'}</td>
                     </tr>
@@ -481,7 +506,7 @@ const LihatRanking: React.FC = () => {
             </div>
           </div>
 
-          {/* Ranking Table */}
+          {/* Ranking Table with Dynamic Kriteria Columns */}
           <div className="bg-white rounded-lg shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-200">
               <h3 className="text-lg font-medium text-gray-800">
@@ -507,6 +532,12 @@ const LihatRanking: React.FC = () => {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Email
                     </th>
+                    {/* Dynamic Kriteria Columns */}
+                    {getKriteriaColumns().map(col => (
+                      <th key={col} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {col.replace('nilai_', '').replace(/_/g, ' ').toUpperCase()}
+                      </th>
+                    ))}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Skor Akhir
                     </th>
@@ -516,6 +547,10 @@ const LihatRanking: React.FC = () => {
                   {rankingData.ranking_summary.map((item: any, index: number) => {
                     const detail = rankingData.ranking_details.find((d: RankingDetail) => d.peringkat === item.peringkat);
                     const isSelected = selectedWinners.includes(item.peringkat);
+                    const hasilAkhirRow = rankingData.tahapan_perhitungan?.tabel_7_hasil_akhir?.find((row: any) => 
+                      row.nama_pelamar === item.namapelamar
+                    );
+                    
                     return (
                       <tr key={item.peringkat} className={isSelected ? "bg-green-50" : index === 0 ? "bg-yellow-50" : ""}>
                         <td className="px-6 py-4 whitespace-nowrap">
@@ -547,6 +582,12 @@ const LihatRanking: React.FC = () => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900">{detail?.pelamar.email || '-'}</div>
                         </td>
+                        {/* Dynamic Kriteria Values */}
+                        {getKriteriaColumns().map(col => (
+                          <td key={col} className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{hasilAkhirRow ? hasilAkhirRow[col] : '-'}</div>
+                          </td>
+                        ))}
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-bold text-blue-600">{item.hasil_akhir.toFixed(3)}</div>
                         </td>
@@ -615,4 +656,5 @@ const LihatRanking: React.FC = () => {
     </div>
   );
 };
+
 export default LihatRanking;

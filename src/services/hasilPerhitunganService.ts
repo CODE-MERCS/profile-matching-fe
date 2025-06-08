@@ -37,7 +37,7 @@ export interface RankingDetail {
   };
 }
 
-// Interface untuk ranking response
+// Interface untuk ranking response - Updated untuk struktur API baru
 export interface RankingResponse {
   status: string;
   data: {
@@ -61,6 +61,23 @@ export interface RankingResponse {
         warnings: string[];
       };
     };
+    // Updated: Tahapan perhitungan dengan struktur baru
+    tahapan_perhitungan: {
+      tabel_1_input_values: any[];
+      tabel_2_gap_calculation: any[]; // Changed from tabel_2_target_dan_gap to tabel_2_gap_calculation
+      tabel_3_bobot_nilai: any[];
+      tabel_4_cf_sf_kriteria_1?: any[];
+      tabel_5_cf_sf_kriteria_2?: any[];
+      tabel_6_cf_sf_kriteria_3?: any[];
+      tabel_7_hasil_akhir: any[]; // Dynamic columns based on kriteria names
+    };
+    // Optional conversion info
+    conversion_info?: {
+      sangat_baik: string;
+      baik: string;
+      cukup_baik: string;
+      kurang_baik: string;
+    };
   };
 }
 
@@ -74,7 +91,7 @@ const getAuthHeaders = () => {
 };
 
 export const hasilPerhitunganService = {
-  // Get ranking detail by pekerjaan ID
+  // Get ranking detail by pekerjaan ID - Updated untuk struktur API baru
   async getRankingDetail(pekerjaanId: number): Promise<RankingResponse['data']> {
     try {
       console.log('Fetching ranking detail for pekerjaan ID:', pekerjaanId);
@@ -87,7 +104,38 @@ export const hasilPerhitunganService = {
       console.log('Ranking detail response:', response.data);
       
       if (response.data.status === 'success') {
-        return response.data.data;
+        // Validate and process response data
+        const data = response.data.data;
+        
+        // Pastikan tahapan_perhitungan memiliki struktur yang benar
+        if (!data.tahapan_perhitungan) {
+          console.warn('Tahapan perhitungan tidak ditemukan dalam response');
+          data.tahapan_perhitungan = {
+            tabel_1_input_values: [],
+            tabel_2_gap_calculation: [],
+            tabel_3_bobot_nilai: [],
+            tabel_7_hasil_akhir: []
+          };
+        }
+        
+        // Ensure tabel_2_gap_calculation exists (compatibility dengan struktur lama)
+        if (!data.tahapan_perhitungan.tabel_2_gap_calculation && (data.tahapan_perhitungan as any).tabel_2_target_dan_gap) {
+          console.log('Converting tabel_2_target_dan_gap to tabel_2_gap_calculation for compatibility');
+          data.tahapan_perhitungan.tabel_2_gap_calculation = (data.tahapan_perhitungan as any).tabel_2_target_dan_gap;
+        }
+        
+        // Add default conversion info if not provided
+        if (!data.conversion_info) {
+          data.conversion_info = {
+            sangat_baik: '81-100 = 5',
+            baik: '61-80 = 4',
+            cukup_baik: '41-60 = 3',
+            kurang_baik: '21-40 = 2'
+          };
+        }
+        
+        console.log('Processed ranking data:', data);
+        return data;
       }
       
       throw new Error('Gagal memuat data ranking');
@@ -97,7 +145,11 @@ export const hasilPerhitunganService = {
       if (error.response?.status === 401) {
         throw new Error('Sesi Anda telah berakhir. Silakan login kembali.');
       } else if (error.response?.status === 404) {
-        throw new Error('Data ranking tidak ditemukan untuk pekerjaan ini');
+        throw new Error('Data ranking tidak ditemukan untuk pekerjaan ini. Pastikan perhitungan Profile Matching sudah dilakukan.');
+      } else if (error.response?.status === 400) {
+        throw new Error('Permintaan tidak valid. Periksa ID pekerjaan yang dipilih.');
+      } else if (error.response?.status === 500) {
+        throw new Error('Terjadi kesalahan server. Silakan coba lagi atau hubungi administrator.');
       }
       
       if (!error.response) {
