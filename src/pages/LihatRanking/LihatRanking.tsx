@@ -1,24 +1,32 @@
 // src/pages/LihatRanking/LihatRanking.tsx
-import React, { useState, useEffect } from 'react';
-import Dropdown from '../../components/atoms/Dropdown/Dropdown';
-import Toast from '../../components/atoms/Toast/Toast';
-import Button from '../../components/atoms/Button/Button';
-import { pekerjaanService, Pekerjaan } from '../../services/pekerjaanService';
-import { hasilPerhitunganService, RankingDetail } from '../../services/hasilPerhitunganService';
+import React, { useState, useEffect } from "react";
+import Dropdown from "../../components/atoms/Dropdown/Dropdown";
+import Toast from "../../components/atoms/Toast/Toast";
+import Button from "../../components/atoms/Button/Button";
+import { pekerjaanService, Pekerjaan } from "../../services/pekerjaanService";
+import {
+  hasilPerhitunganService,
+  RankingDetail,
+} from "../../services/hasilPerhitunganService";
 
 const LihatRanking: React.FC = () => {
   // State untuk pekerjaan dan ranking
   const [pekerjaanList, setPekerjaanList] = useState<Pekerjaan[]>([]);
-  const [selectedPekerjaanId, setSelectedPekerjaanId] = useState<number | undefined>(undefined);
+  const [selectedPekerjaanId, setSelectedPekerjaanId] = useState<
+    number | undefined
+  >(undefined);
   const [rankingData, setRankingData] = useState<any>(null);
   const [isLoadingPekerjaan, setIsLoadingPekerjaan] = useState(true);
   const [isLoadingRanking, setIsLoadingRanking] = useState(false);
-  
+
   // State untuk selection pelamar yang lolos
   const [selectedWinners, setSelectedWinners] = useState<number[]>([]);
-  
+
   // State untuk toast
-  const [toastMessage, setToastMessage] = useState<{type: 'success' | 'error', message: string} | null>(null);
+  const [toastMessage, setToastMessage] = useState<{
+    type: "success" | "error";
+    message: string;
+  } | null>(null);
 
   // Load daftar pekerjaan saat component mount
   useEffect(() => {
@@ -27,18 +35,21 @@ const LihatRanking: React.FC = () => {
       try {
         const pekerjaan = await pekerjaanService.getAllPekerjaan();
         setPekerjaanList(pekerjaan);
-        console.log('Loaded pekerjaan list:', pekerjaan);
+        console.log("Loaded pekerjaan list:", pekerjaan);
       } catch (error) {
-        console.error('Error fetching pekerjaan:', error);
+        console.error("Error fetching pekerjaan:", error);
         setToastMessage({
-          type: 'error',
-          message: error instanceof Error ? error.message : 'Gagal memuat data pekerjaan.'
+          type: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Gagal memuat data pekerjaan.",
         });
       } finally {
         setIsLoadingPekerjaan(false);
       }
     };
-    
+
     fetchPekerjaan();
   }, []);
 
@@ -53,17 +64,22 @@ const LihatRanking: React.FC = () => {
 
       setIsLoadingRanking(true);
       try {
-        const data = await hasilPerhitunganService.getRankingDetail(selectedPekerjaanId);
+        const data = await hasilPerhitunganService.getRankingDetail(
+          selectedPekerjaanId
+        );
         setRankingData(data);
         setSelectedWinners([]); // Reset selection
-        console.log('Ranking data loaded:', data);
+        console.log("Ranking data loaded:", data);
       } catch (error) {
-        console.error('Error loading ranking data:', error);
+        console.error("Error loading ranking data:", error);
         setRankingData(null);
         setSelectedWinners([]);
         setToastMessage({
-          type: 'error',
-          message: error instanceof Error ? error.message : 'Gagal memuat data ranking.'
+          type: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Gagal memuat data ranking.",
         });
       } finally {
         setIsLoadingRanking(false);
@@ -75,15 +91,15 @@ const LihatRanking: React.FC = () => {
 
   // Handle perubahan pilihan pekerjaan
   const handlePekerjaanChange = (value: string | number) => {
-    const pekerjaanId = value === '' ? undefined : Number(value);
+    const pekerjaanId = value === "" ? undefined : Number(value);
     setSelectedPekerjaanId(pekerjaanId);
   };
 
   // Handle selection pelamar yang lolos
   const handleWinnerSelection = (peringkat: number) => {
-    setSelectedWinners(prev => {
+    setSelectedWinners((prev) => {
       if (prev.includes(peringkat)) {
-        return prev.filter(p => p !== peringkat);
+        return prev.filter((p) => p !== peringkat);
       } else {
         return [...prev, peringkat];
       }
@@ -92,50 +108,57 @@ const LihatRanking: React.FC = () => {
 
   // Prepare dropdown options untuk pekerjaan
   const pekerjaanOptions = [
-    { value: '', label: 'Pilih Pekerjaan' },
-    ...pekerjaanList.map(pekerjaan => ({
+    { value: "", label: "Pilih Pekerjaan" },
+    ...pekerjaanList.map((pekerjaan) => ({
       value: pekerjaan.id_pekerjaan,
-      label: pekerjaan.namapekerjaan
-    }))
+      label: pekerjaan.namapekerjaan,
+    })),
   ];
 
   // Get selected pekerjaan name for display
   const getSelectedPekerjaanName = () => {
-    if (!selectedPekerjaanId) return '';
-    const pekerjaan = pekerjaanList.find(p => p.id_pekerjaan === selectedPekerjaanId);
-    return pekerjaan ? pekerjaan.namapekerjaan : '';
+    if (!selectedPekerjaanId) return "";
+    const pekerjaan = pekerjaanList.find(
+      (p) => p.id_pekerjaan === selectedPekerjaanId
+    );
+    return pekerjaan ? pekerjaan.namapekerjaan : "";
   };
 
   // Helper function untuk mendapatkan nama kriteria dari tabel hasil akhir (dynamic)
   const getKriteriaColumns = () => {
-    if (!rankingData?.tahapan_perhitungan?.tabel_7_hasil_akhir || rankingData.tahapan_perhitungan.tabel_7_hasil_akhir.length === 0) {
+    if (
+      !rankingData?.tahapan_perhitungan?.tabel_7_hasil_akhir ||
+      rankingData.tahapan_perhitungan.tabel_7_hasil_akhir.length === 0
+    ) {
       return [];
     }
 
     const sampleRow = rankingData.tahapan_perhitungan.tabel_7_hasil_akhir[0];
-    return Object.keys(sampleRow).filter(key => 
-      !['nama_pelamar', 'hasil_akhir', 'peringkat'].includes(key) && key.startsWith('nilai_')
+    return Object.keys(sampleRow).filter(
+      (key) =>
+        !["nama_pelamar", "hasil_akhir", "peringkat"].includes(key) &&
+        key.startsWith("nilai_")
     );
   };
 
-  // Export ke PDF HTML
+  // Export ke PDF HTML - Format Surat Resmi
   const handleExportPDF = () => {
     if (!rankingData || selectedWinners.length === 0) {
       setToastMessage({
-        type: 'error',
-        message: 'Silakan pilih pelamar yang lolos terlebih dahulu.'
+        type: "error",
+        message: "Silakan pilih pelamar yang lolos terlebih dahulu.",
       });
       return;
     }
-    
+
     // Get selected winners data
-    const winnersData = rankingData.ranking_summary.filter((item: any) => 
+    const winnersData = rankingData.ranking_summary.filter((item: any) =>
       selectedWinners.includes(item.peringkat)
     );
-    
+
     // Get kriteria columns dynamically
     const kriteriaColumns = getKriteriaColumns();
-    
+
     // Generate HTML content for PDF
     const htmlContent = `
 <!DOCTYPE html>
@@ -143,268 +166,367 @@ const LihatRanking: React.FC = () => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hasil Seleksi - ${getSelectedPekerjaanName()}</title>
+    <title>Surat Pengumuman Hasil Seleksi - ${getSelectedPekerjaanName()}</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f9f9f9;
+            font-family: 'Times New Roman', Times, serif;
+            margin: 0;
+            padding: 20px;
+            background-color: white;
+            color: #333;
+            line-height: 1.6;
         }
         .container {
             max-width: 800px;
             margin: 0 auto;
             background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 0;
         }
         .header {
             text-align: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 3px solid #4CAF50;
+            border-bottom: 3px solid #000;
         }
-        .header h1 {
-            color: #2E7D32;
-            margin: 0 0 10px 0;
-            font-size: 28px;
+        .logo {
+            width: 100px;
+            height: auto;
+            margin: 0 auto 15px;
+            display: block;
         }
-        .header h2 {
-            color: #388E3C;
+        .company-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0 5px;
+            color: #000;
+        }
+        .company-subtitle {
+            font-size: 14px;
+            color: #666;
             margin: 0;
-            font-size: 20px;
+        }
+        .letter-info {
+            margin: 30px 0;
+            text-align: left;
+        }
+        .letter-info table {
+            margin: 0;
+            border: none;
+        }
+        .letter-info td {
+            padding: 3px 0;
+            border: none;
+            vertical-align: top;
+        }
+        .letter-info .label {
+            width: 120px;
             font-weight: normal;
         }
-        .congratulations {
-            background: linear-gradient(135deg, #E8F5E8, #C8E6C9);
-            border: 2px solid #4CAF50;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
+        .letter-info .separator {
+            width: 20px;
             text-align: center;
         }
-        .congratulations h3 {
-            color: #1B5E20;
-            margin: 0 0 10px 0;
-            font-size: 22px;
+        .letter-title {
+            text-align: center;
+            margin: 30px 0;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: underline;
+            color: #000;
         }
-        .job-info {
-            background-color: #F5F5F5;
-            padding: 15px;
-            border-radius: 6px;
+        .content {
+            text-align: justify;
             margin: 20px 0;
+            font-size: 14px;
         }
-        .ranking-table {
+        .content p {
+            margin: 15px 0;
+        }
+        .results-table {
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .ranking-table th {
-            background-color: #4CAF50;
-            color: white;
-            padding: 12px 8px;
-            text-align: left;
-            font-weight: bold;
-        }
-        .ranking-table td {
-            padding: 10px 8px;
-            border-bottom: 1px solid #ddd;
-        }
-        .ranking-table tbody tr:nth-child(even) {
-            background-color: #f9f9f9;
-        }
-        .ranking-table tbody tr:hover {
-            background-color: #E8F5E8;
-        }
-        .rank-number {
-            font-weight: bold;
-            color: #2E7D32;
-            font-size: 16px;
-        }
-        .winner-badge {
-            background-color: #4CAF50;
-            color: white;
-            padding: 4px 12px;
-            border-radius: 15px;
             font-size: 12px;
-            font-weight: bold;
         }
-        .footer {
-            margin-top: 30px;
+        .results-table th {
+            background-color: #f5f5f5;
+            border: 1px solid #000;
+            padding: 8px 4px;
             text-align: center;
-            color: #666;
-            font-size: 12px;
-        }
-        .summary-stats {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-            flex-wrap: wrap;
-        }
-        .stat-box {
-            background-color: #E3F2FD;
-            border: 1px solid #2196F3;
-            border-radius: 6px;
-            padding: 15px;
-            text-align: center;
-            margin: 5px;
-            min-width: 120px;
-        }
-        .stat-number {
-            font-size: 24px;
             font-weight: bold;
-            color: #1976D2;
+            color: #000;
         }
-        .stat-label {
+        .results-table td {
+            border: 1px solid #000;
+            padding: 6px 4px;
+            text-align: center;
+        }
+        .results-table tbody tr:nth-child(odd) {
+            background-color: #fafafa;
+        }
+        .rank-1 {
+            background-color: #fff3cd !important;
+            font-weight: bold;
+        }
+        .closing {
+            margin: 30px 0;
+            text-align: justify;
+            font-size: 14px;
+        }
+        .signature {
+            margin-top: 50px;
+            text-align: right;
+            padding-right: 50px;
+        }
+        .signature-date {
+            margin-bottom: 80px;
+            font-size: 14px;
+        }
+        .signature-name {
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 1px solid #000;
+            display: inline-block;
+            min-width: 200px;
+            text-align: center;
+            padding-bottom: 2px;
+        }
+        .signature-title {
             font-size: 12px;
-            color: #666;
             margin-top: 5px;
         }
+        .footer-note {
+            margin-top: 30px;
+            font-size: 11px;
+            font-style: italic;
+            color: #666;
+            text-align: center;
+        }
         @media print {
-            body { margin: 0; background: white; }
+            body { margin: 0; padding: 15px; }
             .container { box-shadow: none; }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Header dengan Logo -->
         <div class="header">
-            <h1>🏆 HASIL SELEKSI KARYAWAN</h1>
-            <h2>Sistem Profile Matching</h2>
+            <img src="data:image/jpeg;base64,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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//xAAC/9oADAMBAAIAAwAAACEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP/xAAC/9oADAMBAAIAAwAAABDzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzj3XbzzzzzzzzDzzzzzzzzzzzzzzzzzzzzzzzzzzzTzzzzzzzzzzzzzzsyyjzBjX1983jShDTizzzhgzDCy3XiwV0izjzQA1yykTwgnzzzzzzzzz5RNflv13uxVwuhwzxyiCzwh9XSjjzSijknysQiAg3yx0xTwzzzzzzzzzwV01zXHy2Nzyl7mzDSzwjzyqzzyjnTgiig+iTzzxm3zj3yQDzzzzzzzzy+fkfxzxpPysBcmyQyGmjz434zzzi3Sixik2Hy2zjChyiXyATzzzzzzzzz/C4LXzzzzzwINPzwxwzzyzxzzzywzzyxzzwzzywwxzzwzzxzzzzzzzzzz2rpT/AM88888S/wDqELELDPPNeAMOPOEOPIPNBHHMOMLHPPAPIDDCJTPEEPPLVDV/PPc/vHPvfFHNEFPBCVTOHJONLWDFOJOMKKKKONGBPGGOHSVMPMPPNGu7kqUk7dMGn+ANAKKMPPcFPFFHHnPPNEJDOMDFPKPfPKILHFLMFfPPPP78YeJmgwRzPB7JNHLKfNHadAKPOHuKMPDNKDPFIJIMAEOPOAHPAfGfPPPDbv8AjEK82/s9myzzyyzyzyxyzzwxzzyxzxw7zzxwxzwxxzyx1ywzzzzzzzzy5/8AM888+v8APPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP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" alt="Logo Perusahaan" class="logo" />
+            <div class="company-name">PT. SISTEM PROFILE MATCHING</div>
+            <div class="company-subtitle">Jl. Teknologi No. 123, Jakarta Selatan 12345</div>
+            <div class="company-subtitle">Telp: (021) 1234-5678 | Email: info@profilematching.com</div>
         </div>
 
-        <div class="congratulations">
-            <h3>🎉 SELAMAT KEPADA PELAMAR/KANDIDAT YANG LOLOS! 🎉</h3>
-            <p>Berdasarkan hasil perhitungan Profile Matching untuk posisi <strong>${getSelectedPekerjaanName()}</strong></p>
+        <!-- Informasi Surat -->
+        <div class="letter-info">
+            <table>
+                <tr>
+                    <td class="label">Nomor</td>
+                    <td class="separator">:</td>
+                    <td>001/HRD-PM/${new Date().getFullYear()}</td>
+                </tr>
+                <tr>
+                    <td class="label">Perihal</td>
+                    <td class="separator">:</td>
+                    <td><strong>Pengumuman Hasil Seleksi Karyawan</strong></td>
+                </tr>
+                <tr>
+                    <td class="label">Tanggal</td>
+                    <td class="separator">:</td>
+                    <td>${new Date().toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}</td>
+                </tr>
+            </table>
         </div>
 
-        <div class="job-info">
-            <h4>📋 Informasi Seleksi:</h4>
-            <p><strong>Posisi:</strong> ${getSelectedPekerjaanName()}</p>
-            <p><strong>Tanggal Cetak:</strong> ${new Date().toLocaleDateString('id-ID', {
-              year: 'numeric',
-              month: 'long', 
-              day: 'numeric'
-            })}</p>
-            <p><strong>Total Pelamar Lolos:</strong> ${selectedWinners.length} dari ${rankingData.ranking_summary.length} pelamar</p>
+        <!-- Judul Surat -->
+        <div class="letter-title">
+            PENGUMUMAN HASIL SELEKSI KARYAWAN<br>
+            POSISI: ${getSelectedPekerjaanName().toUpperCase()}
         </div>
 
-        <div class="summary-stats">
-            <div class="stat-box">
-                <div class="stat-number">${rankingData.perhitungan_summary.total_pelamar}</div>
-                <div class="stat-label">Total Pelamar</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number">${rankingData.perhitungan_summary.total_kriteria}</div>
-                <div class="stat-label">Kriteria Penilaian</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-number">${selectedWinners.length}</div>
-                <div class="stat-label">Pelamar Lolos</div>
-            </div>
+        <!-- Isi Surat -->
+        <div class="content">
+            <p>Dengan hormat,</p>
+            
+            <p>Sehubungan dengan pelaksanaan seleksi karyawan untuk posisi <strong>${getSelectedPekerjaanName()}</strong> yang telah dilaksanakan, maka dengan ini kami mengumumkan hasil seleksi berdasarkan metode <strong>Profile Matching</strong>.</p>
+            
+            <p>Proses seleksi telah dilakukan dengan menggunakan ${
+              rankingData.perhitungan_summary.total_kriteria
+            } kriteria penilaian terhadap ${
+      rankingData.perhitungan_summary.total_pelamar
+    } pelamar yang mengikuti seleksi.</p>
+            
+            <p>Berdasarkan hasil perhitungan dan analisis yang telah dilakukan, dengan ini kami umumkan kandidat yang <strong>DINYATAKAN LOLOS</strong> seleksi adalah sebagai berikut:</p>
         </div>
 
-        <h3>📊 Daftar Lengkap Ranking Pelamar</h3>
-        <table class="ranking-table">
+        <!-- Tabel Hasil -->
+        <table class="results-table">
             <thead>
                 <tr>
-                    <th>Peringkat</th>
-                    <th>Nama Pelamar</th>
-                    <th>No Pelamar</th>
-                    <th>Email</th>
-                    ${kriteriaColumns.map(col => 
-                      `<th>${col.replace('nilai_', '').replace(/_/g, ' ').toUpperCase()}</th>`
-                    ).join('')}
-                    <th>Skor Akhir</th>
-                    <th>Status</th>
+                    <th style="width: 8%;">No</th>
+                    <th style="width: 10%;">Peringkat</th>
+                    <th style="width: 25%;">Nama Lengkap</th>
+                    <th style="width: 12%;">No. Pelamar</th>
+                    <th style="width: 25%;">Email</th>
+                    ${kriteriaColumns
+                      .map(
+                        (col) =>
+                          `<th style="width: ${Math.floor(
+                            20 / kriteriaColumns.length
+                          )}%;">${col
+                            .replace("nilai_", "")
+                            .replace(/_/g, " ")
+                            .toUpperCase()}</th>`
+                      )
+                      .join("")}
+                    <th style="width: 10%;">Skor Akhir</th>
                 </tr>
             </thead>
             <tbody>
-                ${rankingData.ranking_summary.map((item: any) => {
-                  const detail = rankingData.ranking_details.find((d: RankingDetail) => d.peringkat === item.peringkat);
-                  const isWinner = selectedWinners.includes(item.peringkat);
-                  const hasilAkhirRow = rankingData.tahapan_perhitungan?.tabel_7_hasil_akhir?.find((row: any) => 
-                    row.nama_pelamar === item.namapelamar
-                  );
-                  
-                  return `
-                    <tr>
-                        <td class="rank-number">#${item.peringkat}</td>
-                        <td>${item.namapelamar}</td>
-                        <td>${detail?.pelamar.nopelamar || '-'}</td>
-                        <td>${detail?.pelamar.email || '-'}</td>
-                        ${kriteriaColumns.map(col => 
-                          `<td>${hasilAkhirRow ? hasilAkhirRow[col] : '-'}</td>`
-                        ).join('')}
+                ${winnersData
+                  .map((item: any, index: number) => {
+                    const detail = rankingData.ranking_details.find(
+                      (d: RankingDetail) => d.peringkat === item.peringkat
+                    );
+                    const hasilAkhirRow =
+                      rankingData.tahapan_perhitungan?.tabel_7_hasil_akhir?.find(
+                        (row: any) => row.nama_pelamar === item.namapelamar
+                      );
+
+                    return `
+                    <tr class="${item.peringkat === 1 ? "rank-1" : ""}">
+                        <td>${index + 1}</td>
+                        <td><strong>${item.peringkat}</strong></td>
+                        <td style="text-align: left; padding-left: 8px;"><strong>${
+                          item.namapelamar
+                        }</strong></td>
+                        <td>${detail?.pelamar.nopelamar || "-"}</td>
+                        <td style="text-align: left; padding-left: 8px;">${
+                          detail?.pelamar.email || "-"
+                        }</td>
+                        ${kriteriaColumns
+                          .map(
+                            (col) =>
+                              `<td><strong>${
+                                hasilAkhirRow ? hasilAkhirRow[col] : "-"
+                              }</strong></td>`
+                          )
+                          .join("")}
                         <td><strong>${item.hasil_akhir.toFixed(3)}</strong></td>
-                        <td>${isWinner ? '<span class="winner-badge">LOLOS</span>' : '-'}</td>
                     </tr>
                   `;
-                }).join('')}
+                  })
+                  .join("")}
             </tbody>
         </table>
 
-        <div class="footer">
-            <p>Dokumen ini dibuat secara otomatis oleh Sistem Profile Matching</p>
-            <p>Dicetak pada: ${new Date().toLocaleString('id-ID')}</p>
+        <!-- Penutup -->
+        <div class="content">
+            <p>Kepada kandidat yang dinyatakan lolos, diharapkan untuk menghubungi bagian HRD dalam waktu <strong>7 (tujuh) hari kerja</strong> sejak pengumuman ini dikeluarkan untuk proses selanjutnya.</p>
+            
+            <p>Kepada seluruh pelamar yang telah berpartisipasi dalam proses seleksi ini, kami ucapkan terima kasih atas dedikasi dan antusiasme yang telah ditunjukkan.</p>
+            
+            <p>Demikian pengumuman ini dibuat untuk dapat diketahui dan dilaksanakan sebagaimana mestinya.</p>
+        </div>
+
+        <!-- Tanda Tangan -->
+        <div class="signature">
+            <div class="signature-date">${new Date().toLocaleDateString(
+              "id-ID",
+              {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              }
+            )}</div>
+            <div style="margin-bottom: 10px;">Hormat kami,</div>
+            <div style="margin-bottom: 15px;"><strong>PT. SISTEM PROFILE MATCHING</strong></div>
+            <div style="margin-bottom: 80px;">Kepala Bagian HRD</div>
+            <div class="signature-name">( _________________________ )</div>
+            <div class="signature-title">Nama: [Nama Kepala HRD]<br>NIP: [Nomor Induk Pegawai]</div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer-note">
+            <p>* Dokumen ini dibuat secara otomatis oleh Sistem Profile Matching pada ${new Date().toLocaleString(
+              "id-ID"
+            )}</p>
+            <p>* Untuk informasi lebih lanjut, silakan hubungi bagian HRD</p>
         </div>
     </div>
 </body>
 </html>`;
 
     // Create and download HTML file
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
-    const link = document.createElement('a');
+    const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8;" });
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `Hasil_Seleksi_${getSelectedPekerjaanName()}_${new Date().toISOString().split('T')[0]}.html`;
+    link.download = `Hasil_Seleksi_${getSelectedPekerjaanName()}_${
+      new Date().toISOString().split("T")[0]
+    }.html`;
     link.click();
-    
+
     setToastMessage({
-      type: 'success',
-      message: `File HTML berhasil diekspor untuk ${selectedWinners.length} pelamar yang lolos.`
+      type: "success",
+      message: `File HTML berhasil diekspor untuk ${selectedWinners.length} pelamar yang lolos.`,
     });
   };
 
   return (
     <div className="p-6 max-w-full">
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">Lihat Ranking Pelamar</h1>
+        <h1 className="text-2xl font-semibold text-gray-800">
+          Lihat Ranking Pelamar
+        </h1>
         <p className="text-gray-600 mt-1">
-          Lihat hasil ranking dan pilih pelamar yang lolos untuk diekspor sebagai dokumen resmi.
+          Lihat hasil ranking dan pilih pelamar yang lolos untuk diekspor
+          sebagai dokumen resmi.
         </p>
       </div>
 
       {/* Selection Section */}
       <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
-        <h2 className="text-lg font-medium text-gray-800 mb-4">Pilih Pekerjaan</h2>
-        
+        <h2 className="text-lg font-medium text-gray-800 mb-4">
+          Pilih Pekerjaan
+        </h2>
+
         <div className="max-w-md">
           <div className="space-y-2">
-            <label htmlFor="pekerjaan" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="pekerjaan"
+              className="block text-sm font-medium text-gray-700"
+            >
               Pekerjaan <span className="text-red-500">*</span>
             </label>
-            
+
             {isLoadingPekerjaan ? (
               <div className="flex items-center justify-center p-3 border border-gray-300 rounded-md bg-gray-50">
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-600"></div>
-                <span className="ml-2 text-sm text-gray-600">Memuat daftar pekerjaan...</span>
+                <span className="ml-2 text-sm text-gray-600">
+                  Memuat daftar pekerjaan...
+                </span>
               </div>
             ) : pekerjaanList.length === 0 ? (
               <div className="flex items-center justify-center p-3 border border-gray-300 rounded-md bg-red-50">
                 <span className="text-sm text-red-600">
-                  Tidak ada pekerjaan tersedia. Silakan buat pekerjaan terlebih dahulu.
+                  Tidak ada pekerjaan tersedia. Silakan buat pekerjaan terlebih
+                  dahulu.
                 </span>
               </div>
             ) : (
               <Dropdown
-                value={selectedPekerjaanId || ''}
+                value={selectedPekerjaanId || ""}
                 onChange={handlePekerjaanChange}
                 options={pekerjaanOptions}
                 placeholder="Pilih Pekerjaan"
               />
             )}
-            
+
             <p className="text-xs text-gray-500">
               Pilih pekerjaan untuk melihat ranking pelamar
             </p>
@@ -415,13 +537,22 @@ const LihatRanking: React.FC = () => {
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                <svg
+                  className="h-5 w-5 text-blue-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                    clipRule="evenodd"
+                  />
                 </svg>
               </div>
               <div className="ml-3">
                 <p className="text-sm text-blue-700">
-                  <span className="font-medium">Pekerjaan Dipilih:</span> {getSelectedPekerjaanName()}
+                  <span className="font-medium">Pekerjaan Dipilih:</span>{" "}
+                  {getSelectedPekerjaanName()}
                 </p>
                 <p className="text-xs text-blue-600 mt-1">
                   Pilih pelamar yang lolos dan export sebagai dokumen resmi
@@ -445,18 +576,32 @@ const LihatRanking: React.FC = () => {
           {/* Summary */}
           <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-medium text-gray-800">Ringkasan Ranking</h3>
+              <h3 className="text-lg font-medium text-gray-800">
+                Ringkasan Ranking
+              </h3>
               <div className="flex items-center space-x-4">
                 <div className="text-sm text-gray-600">
-                  Pelamar Dipilih: <span className="font-bold text-green-600">{selectedWinners.length}</span>
+                  Pelamar Dipilih:{" "}
+                  <span className="font-bold text-green-600">
+                    {selectedWinners.length}
+                  </span>
                 </div>
                 <Button
                   variant="primary"
                   onClick={handleExportPDF}
                   disabled={selectedWinners.length === 0}
                   icon={
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clipRule="evenodd" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-5 w-5"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   }
                 >
@@ -464,7 +609,7 @@ const LihatRanking: React.FC = () => {
                 </Button>
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="bg-blue-50 p-4 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">
@@ -495,12 +640,21 @@ const LihatRanking: React.FC = () => {
             {/* Instructions */}
             <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
               <div className="flex items-start">
-                <svg className="h-5 w-5 text-yellow-600 mt-0.5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                <svg
+                  className="h-5 w-5 text-yellow-600 mt-0.5 mr-2"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  />
                 </svg>
                 <div className="text-sm text-yellow-700">
-                  <strong>Petunjuk:</strong> Centang kotak di samping nama pelamar yang dinyatakan lolos seleksi, 
-                  kemudian klik tombol "Export PDF HTML" untuk mengunduh dokumen resmi hasil seleksi.
+                  <strong>Petunjuk:</strong> Centang kotak di samping nama
+                  pelamar yang dinyatakan lolos seleksi, kemudian klik tombol
+                  "Export PDF HTML" untuk mengunduh dokumen resmi hasil seleksi.
                 </div>
               </div>
             </div>
@@ -533,9 +687,15 @@ const LihatRanking: React.FC = () => {
                       Email
                     </th>
                     {/* Dynamic Kriteria Columns */}
-                    {getKriteriaColumns().map(col => (
-                      <th key={col} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        {col.replace('nilai_', '').replace(/_/g, ' ').toUpperCase()}
+                    {getKriteriaColumns().map((col) => (
+                      <th
+                        key={col}
+                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      >
+                        {col
+                          .replace("nilai_", "")
+                          .replace(/_/g, " ")
+                          .toUpperCase()}
                       </th>
                     ))}
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -544,56 +704,97 @@ const LihatRanking: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {rankingData.ranking_summary.map((item: any, index: number) => {
-                    const detail = rankingData.ranking_details.find((d: RankingDetail) => d.peringkat === item.peringkat);
-                    const isSelected = selectedWinners.includes(item.peringkat);
-                    const hasilAkhirRow = rankingData.tahapan_perhitungan?.tabel_7_hasil_akhir?.find((row: any) => 
-                      row.nama_pelamar === item.namapelamar
-                    );
-                    
-                    return (
-                      <tr key={item.peringkat} className={isSelected ? "bg-green-50" : index === 0 ? "bg-yellow-50" : ""}>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={() => handleWinnerSelection(item.peringkat)}
-                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                          />
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            {index === 0 && (
-                              <svg className="w-5 h-5 text-yellow-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                              </svg>
-                            )}
-                            <span className={`text-lg font-semibold ${index === 0 ? 'text-yellow-600' : 'text-gray-900'}`}>
-                              #{item.peringkat}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{item.namapelamar}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{detail?.pelamar.nopelamar || '-'}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{detail?.pelamar.email || '-'}</div>
-                        </td>
-                        {/* Dynamic Kriteria Values */}
-                        {getKriteriaColumns().map(col => (
-                          <td key={col} className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{hasilAkhirRow ? hasilAkhirRow[col] : '-'}</div>
+                  {rankingData.ranking_summary.map(
+                    (item: any, index: number) => {
+                      const detail = rankingData.ranking_details.find(
+                        (d: RankingDetail) => d.peringkat === item.peringkat
+                      );
+                      const isSelected = selectedWinners.includes(
+                        item.peringkat
+                      );
+                      const hasilAkhirRow =
+                        rankingData.tahapan_perhitungan?.tabel_7_hasil_akhir?.find(
+                          (row: any) => row.nama_pelamar === item.namapelamar
+                        );
+
+                      return (
+                        <tr
+                          key={item.peringkat}
+                          className={
+                            isSelected
+                              ? "bg-green-50"
+                              : index === 0
+                              ? "bg-yellow-50"
+                              : ""
+                          }
+                        >
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() =>
+                                handleWinnerSelection(item.peringkat)
+                              }
+                              className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                            />
                           </td>
-                        ))}
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-bold text-blue-600">{item.hasil_akhir.toFixed(3)}</div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              {index === 0 && (
+                                <svg
+                                  className="w-5 h-5 text-yellow-500 mr-2"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                                </svg>
+                              )}
+                              <span
+                                className={`text-lg font-semibold ${
+                                  index === 0
+                                    ? "text-yellow-600"
+                                    : "text-gray-900"
+                                }`}
+                              >
+                                #{item.peringkat}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {item.namapelamar}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {detail?.pelamar.nopelamar || "-"}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">
+                              {detail?.pelamar.email || "-"}
+                            </div>
+                          </td>
+                          {/* Dynamic Kriteria Values */}
+                          {getKriteriaColumns().map((col) => (
+                            <td
+                              key={col}
+                              className="px-6 py-4 whitespace-nowrap"
+                            >
+                              <div className="text-sm text-gray-900">
+                                {hasilAkhirRow ? hasilAkhirRow[col] : "-"}
+                              </div>
+                            </td>
+                          ))}
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-bold text-blue-600">
+                              {item.hasil_akhir.toFixed(3)}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+                  )}
                 </tbody>
               </table>
             </div>
@@ -602,7 +803,9 @@ const LihatRanking: React.FC = () => {
           {/* Best Candidate Detail */}
           {rankingData.ranking_details && rankingData.ranking_details[0] && (
             <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Detail Pelamar Terbaik</h3>
+              <h3 className="text-lg font-medium text-gray-800 mb-4">
+                Detail Pelamar Terbaik
+              </h3>
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
                   <div>
@@ -610,7 +813,8 @@ const LihatRanking: React.FC = () => {
                       {rankingData.ranking_details[0].pelamar.namapelamar}
                     </h4>
                     <p className="text-sm text-green-600">
-                      Peringkat {rankingData.ranking_details[0].peringkat} • {rankingData.ranking_details[0].pelamar.nopelamar}
+                      Peringkat {rankingData.ranking_details[0].peringkat} •{" "}
+                      {rankingData.ranking_details[0].pelamar.nopelamar}
                     </p>
                     <p className="text-xs text-green-500 mt-1">
                       {rankingData.ranking_details[0].pelamar.email}
@@ -618,22 +822,30 @@ const LihatRanking: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold text-green-600">
-                      {rankingData.ranking_details[0].final_calculation.score.toFixed(3)}
+                      {rankingData.ranking_details[0].final_calculation.score.toFixed(
+                        3
+                      )}
                     </div>
                     <div className="text-sm text-green-500">Skor Akhir</div>
                   </div>
                 </div>
-                
+
                 <div className="text-sm text-gray-600">
-                  <strong>Formula Perhitungan:</strong> {rankingData.ranking_details[0].final_calculation.formula}
+                  <strong>Formula Perhitungan:</strong>{" "}
+                  {rankingData.ranking_details[0].final_calculation.formula}
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {Object.entries(rankingData.ranking_details[0].final_calculation.details).map(([key, detail]: [string, any]) => (
+                  {Object.entries(
+                    rankingData.ranking_details[0].final_calculation.details
+                  ).map(([key, detail]: [string, any]) => (
                     <div key={key} className="p-3 bg-gray-50 rounded">
-                      <div className="font-medium text-gray-800">{detail.kriteria_name}</div>
+                      <div className="font-medium text-gray-800">
+                        {detail.kriteria_name}
+                      </div>
                       <div className="text-sm text-gray-600">
-                        Skor: {detail.total} × {detail.bobot_persen}% = {detail.contribution}
+                        Skor: {detail.total} × {detail.bobot_persen}% ={" "}
+                        {detail.contribution}
                       </div>
                     </div>
                   ))}
