@@ -99,7 +99,7 @@ const getStatusLabel = (status: string): string => {
 
 // Helper function untuk mapping data API ke format display
 const mapSubkriteriaToDisplay = (subkriteria: Subkriteria): SubkriteriaDisplay => ({
-  id: `SUB-${String(subkriteria.id_subkriteria).padStart(3, '0')}`,
+  id: `S-${String(subkriteria.id_subkriteria).padStart(3, '0')}`,
   nama: subkriteria.namasubkriteria,
   nilaiTarget: subkriteria.nilaitarget,
   status: subkriteria.status,

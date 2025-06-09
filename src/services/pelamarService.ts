@@ -57,7 +57,7 @@ const getAuthHeaders = () => {
 
 // Helper function untuk mapping data API ke format display
 const mapPelamarToDisplay = (pelamar: Pelamar): PelamarDisplay => ({
-  id: `APL-${String(pelamar.id_pelamar).padStart(3, '0')}`,
+  id: `A-${String(pelamar.id_pelamar).padStart(3, '0')}`,
   nama: pelamar.namapelamar,
   email: pelamar.email,
   telepon: pelamar.nopelamar,

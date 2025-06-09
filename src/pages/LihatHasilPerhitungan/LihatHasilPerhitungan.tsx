@@ -197,7 +197,7 @@ const LihatHasilPerhitungan: React.FC = () => {
   };
 
   // Generate detailed calculation HTML
-  const generateDetailedCalculationHTML = () => {
+    const generateDetailedCalculationHTML = () => {
     if (!perhitunganData?.tahapan_perhitungan) return '';
 
     const tahapan = perhitunganData.tahapan_perhitungan;
@@ -208,31 +208,81 @@ const LihatHasilPerhitungan: React.FC = () => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detail Perhitungan Profile Matching - ${getSelectedPekerjaanName()}</title>
+    <title>Laporan Detail Perhitungan Profile Matching - ${getSelectedPekerjaanName()}</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-            background-color: #f5f5f5;
+            font-family: 'Times New Roman', Times, serif;
+            margin: 0;
+            padding: 20px;
+            background-color: white;
+            color: #333;
+            line-height: 1.6;
         }
         .container {
-            max-width: 1200px;
+            max-width: 900px;
             margin: 0 auto;
             background: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            padding: 0;
         }
         .header {
             text-align: center;
             margin-bottom: 30px;
             padding-bottom: 20px;
-            border-bottom: 3px solid #2196F3;
+            border-bottom: 3px solid #000;
         }
-        .header h1 {
-            color: #1976D2;
-            margin: 0 0 10px 0;
-            font-size: 28px;
+        .logo {
+            width: 100px;
+            height: auto;
+            margin: 0 auto 15px;
+            display: block;
+        }
+        .company-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0 5px;
+            color: #000;
+        }
+        .company-subtitle {
+            font-size: 14px;
+            color: #666;
+            margin: 0;
+        }
+        .letter-info {
+            margin: 30px 0;
+            text-align: left;
+        }
+        .letter-info table {
+            margin: 0;
+            border: none;
+        }
+        .letter-info td {
+            padding: 3px 0;
+            border: none;
+            vertical-align: top;
+        }
+        .letter-info .label {
+            width: 120px;
+            font-weight: normal;
+        }
+        .letter-info .separator {
+            width: 20px;
+            text-align: center;
+        }
+        .letter-title {
+            text-align: center;
+            margin: 30px 0;
+            font-size: 16px;
+            font-weight: bold;
+            text-decoration: underline;
+            color: #000;
+        }
+        .content {
+            text-align: justify;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .content p {
+            margin: 15px 0;
         }
         .section {
             margin: 30px 0;
@@ -243,7 +293,7 @@ const LihatHasilPerhitungan: React.FC = () => {
             padding: 12px 20px;
             margin: 0 0 15px 0;
             border-radius: 6px;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
         }
         .calculation-table {
@@ -251,18 +301,18 @@ const LihatHasilPerhitungan: React.FC = () => {
             border-collapse: collapse;
             margin: 15px 0;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            font-size: 12px;
+            font-size: 11px;
         }
         .calculation-table th {
             background-color: #1976D2;
             color: white;
-            padding: 10px 6px;
+            padding: 8px 4px;
             text-align: center;
             font-weight: bold;
             border: 1px solid #ddd;
         }
         .calculation-table td {
-            padding: 8px 6px;
+            padding: 6px 4px;
             border: 1px solid #ddd;
             text-align: center;
         }
@@ -276,7 +326,7 @@ const LihatHasilPerhitungan: React.FC = () => {
             font-weight: bold;
             background-color: #E8F5E8 !important;
             text-align: left !important;
-            padding-left: 12px !important;
+            padding-left: 8px !important;
         }
         .target-row {
             background-color: #FFF3E0 !important;
@@ -304,11 +354,64 @@ const LihatHasilPerhitungan: React.FC = () => {
             border-radius: 4px;
             border-left: 4px solid #4CAF50;
         }
+        .summary-section {
+            margin: 30px 0;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .summary-item {
+            background: white;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+            text-align: center;
+        }
+        .summary-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+        .summary-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+        }
+        .signature {
+            margin-top: 50px;
+            text-align: right;
+            padding-right: 50px;
+        }
+        .signature-date {
+            margin-bottom: 60px;
+            font-size: 14px;
+        }
+        .signature-name {
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 1px solid #000;
+            display: inline-block;
+            min-width: 200px;
+            text-align: center;
+            padding-bottom: 2px;
+        }
+        .signature-title {
+            font-size: 12px;
+            margin-top: 5px;
+        }
         .footer {
             margin-top: 40px;
             text-align: center;
             color: #666;
-            font-size: 12px;
+            font-size: 11px;
             border-top: 1px solid #ddd;
             padding-top: 20px;
         }
@@ -316,36 +419,60 @@ const LihatHasilPerhitungan: React.FC = () => {
             body { margin: 0; background: white; }
             .container { box-shadow: none; }
         }
+        .kriteria-header {
+            font-weight: bold;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
     <div class="container">
+        <!-- Header dengan Logo -->
         <div class="header">
-            <h1>📊 DETAIL PERHITUNGAN PROFILE MATCHING</h1>
-            <h2>Posisi: ${getSelectedPekerjaanName()}</h2>
-            <p>Tanggal: ${new Date().toLocaleDateString('id-ID', {
-              year: 'numeric',
-              month: 'long', 
-              day: 'numeric'
-            })}</p>
+            <img src="data:image/jpeg;base64,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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//" alt="Logo Perusahaan" class="logo" />
+            <div class="company-name">PT. SISTEM PROFILE MATCHING</div>
+            <div class="company-subtitle">Jl. Teknologi No. 123, Jakarta Selatan 12345</div>
+            <div class="company-subtitle">Telp: (021) 1234-5678 | Email: info@profilematching.com</div>
         </div>
 
-        <div class="conversion-info">
-            <h3>🔄 Konversi Nilai Bobot</h3>
-            <div class="conversion-grid">
-                <div class="conversion-item">
-                    <strong>Sangat Baik:</strong> ${perhitunganData.conversion_info?.sangat_baik || '81-100 = 5'}
-                </div>
-                <div class="conversion-item">
-                    <strong>Baik:</strong> ${perhitunganData.conversion_info?.baik || '61-80 = 4'}
-                </div>
-                <div class="conversion-item">
-                    <strong>Cukup Baik:</strong> ${perhitunganData.conversion_info?.cukup_baik || '41-60 = 3'}
-                </div>
-                <div class="conversion-item">
-                    <strong>Kurang Baik:</strong> ${perhitunganData.conversion_info?.kurang_baik || '21-40 = 2'}
-                </div>
-            </div>
+        <!-- Informasi Surat -->
+        <div class="letter-info">
+            <table>
+                <tr>
+                    <td class="label">Nomor</td>
+                    <td class="separator">:</td>
+                    <td>002/HRD-PM/${new Date().getFullYear()}</td>
+                </tr>
+                <tr>
+                    <td class="label">Perihal</td>
+                    <td class="separator">:</td>
+                    <td><strong>Laporan Detail Perhitungan Profile Matching</strong></td>
+                </tr>
+                <tr>
+                    <td class="label">Tanggal</td>
+                    <td class="separator">:</td>
+                    <td>${new Date().toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'long', 
+                      year: 'numeric'
+                    })}</td>
+                </tr>
+            </table>
+        </div>
+
+        <!-- Judul Surat -->
+        <div class="letter-title">
+            LAPORAN DETAIL PERHITUNGAN PROFILE MATCHING<br>
+            POSISI: ${getSelectedPekerjaanName().toUpperCase()}
+        </div>
+
+        <!-- Isi Surat -->
+        <div class="content">
+            <p>Dengan hormat,</p>
+            
+            <p>Berdasarkan pelaksanaan proses seleksi karyawan untuk posisi <strong>${getSelectedPekerjaanName()}</strong>, berikut ini kami sampaikan laporan detail perhitungan menggunakan metode <strong>Profile Matching</strong>.</p>
+            
+            <p>Laporan ini mencakup seluruh tahapan perhitungan mulai dari input nilai, perhitungan GAP, konversi bobot nilai, hingga penentuan hasil akhir ranking pelamar.</p>
         </div>
 
         ${generateTabelInputValues(tahapan)}
@@ -353,6 +480,27 @@ const LihatHasilPerhitungan: React.FC = () => {
         ${generateTabelBobotNilai(tahapan)}
         ${generateTabelCoreFactorSecondaryFactor(tahapan)}
         ${generateTabelHasilAkhir(tahapan)}
+
+        <!-- Penutup -->
+        <div class="content">
+            <p>Demikian laporan detail perhitungan Profile Matching ini kami sampaikan. Laporan ini dapat digunakan sebagai dokumentasi dan referensi untuk proses evaluasi selanjutnya.</p>
+            
+            <p>Terima kasih atas perhatian dan kerjasamanya.</p>
+        </div>
+
+        <!-- Tanda Tangan -->
+        <div class="signature">
+            <div class="signature-date">${new Date().toLocaleDateString('id-ID', {
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric'
+            })}</div>
+            <div style="margin-bottom: 10px;">Hormat kami,</div>
+            <div style="margin-bottom: 15px;"><strong>PT. SISTEM PROFILE MATCHING</strong></div>
+            <div style="margin-bottom: 60px;">Tim Analisis HRD</div>
+            <div class="signature-name">( _________________________ )</div>
+            <div class="signature-title">Nama: [Nama Kepala Tim Analisis]<br>NIP: [Nomor Induk Pegawai]</div>
+        </div>
 
         <div class="footer">
             <p>Dokumen ini dibuat secara otomatis oleh Sistem Profile Matching</p>

@@ -106,7 +106,7 @@ const mapKriteriaToDisplay = (kriteria: Kriteria): KriteriaDisplay => {
   }
   
   return {
-    id: `KRT-${String(kriteria.id_kriteria).padStart(3, '0')}`,
+    id: `K-${String(kriteria.id_kriteria).padStart(3, '0')}`,
     nama: kriteria.namakriteria,
     bobot: kriteria.bobot,
     pekerjaan: namaPekerjaan,
