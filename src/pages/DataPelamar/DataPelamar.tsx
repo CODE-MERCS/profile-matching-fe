@@ -23,8 +23,11 @@ const DataPelamar: React.FC = () => {
   // State untuk modals
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleteAllModalOpen, setIsDeleteAllModalOpen] = useState(false);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [currentPelamar, setCurrentPelamar] = useState<PelamarDisplay | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
   const [toastMessage, setToastMessage] = useState<{type: 'success' | 'error', message: string} | null>(null);
   
   // Definisi kolom untuk tabel
@@ -36,7 +39,7 @@ const DataPelamar: React.FC = () => {
     },
     { 
       id: 'nama', 
-      label: 'NAMA', 
+      label: 'NAMA PELAMAR', 
       sortable: true 
     },
     { 
@@ -46,12 +49,12 @@ const DataPelamar: React.FC = () => {
     },
     { 
       id: 'telepon', 
-      label: 'TELEPON', 
+      label: 'NO. TELEPON', 
       sortable: true 
     },
     { 
       id: 'tanggalLamar', 
-      label: 'TANGGAL DAFTAR', 
+      label: 'TANGGAL LAMAR', 
       sortable: true 
     },
     { 
@@ -100,6 +103,14 @@ const DataPelamar: React.FC = () => {
           item.telepon.toLowerCase().includes(searchTerm.toLowerCase())
         );
       }
+      
+      // Sort by ID ascending (A-001, A-002, A-003, etc.)
+      filtered.sort((a, b) => {
+        // Extract numeric part from ID (A-001 -> 1, A-002 -> 2, etc.)
+        const numA = parseInt(a.id.split('-')[1]);
+        const numB = parseInt(b.id.split('-')[1]);
+        return numA - numB;
+      });
       
       setFilteredData(filtered);
       setCurrentPage(1); // Reset ke halaman pertama saat filter berubah
@@ -164,21 +175,32 @@ const DataPelamar: React.FC = () => {
     setCurrentPelamar(item);
     setIsDeleteModalOpen(true);
   };
+
+  const handleOpenDeleteAllModal = () => {
+    if (pelamar.length === 0) {
+      setToastMessage({
+        type: 'error',
+        message: 'Tidak ada pelamar untuk dihapus.'
+      });
+      return;
+    }
+    setIsDeleteAllModalOpen(true);
+  };
   
   const handleSubmitForm = async (data: PelamarDisplay) => {
     try {
       if (currentPelamar) {
         // Update existing
-        const id = pelamarService.extractIdFromDisplayId(data.id);
+        const id = pelamarService.extractIdFromDisplayId(currentPelamar.id);
         const updatedPelamar = await pelamarService.updatePelamar(id, data);
         
         setPelamar(prev => 
-          prev.map(item => item.id === data.id ? updatedPelamar : item)
+          prev.map(item => item.id === currentPelamar.id ? updatedPelamar : item)
         );
         
         setToastMessage({
           type: 'success',
-          message: `Data pelamar "${updatedPelamar.nama}" berhasil diperbarui.`
+          message: `Pelamar "${updatedPelamar.nama}" berhasil diperbarui.`
         });
       } else {
         // Add new
@@ -206,6 +228,7 @@ const DataPelamar: React.FC = () => {
   const handleDelete = async () => {
     if (!currentPelamar) return;
     
+    setIsDeleting(true);
     try {
       const id = pelamarService.extractIdFromDisplayId(currentPelamar.id);
       await pelamarService.deletePelamar(id);
@@ -227,6 +250,34 @@ const DataPelamar: React.FC = () => {
         type: 'error',
         message: error instanceof Error ? error.message : 'Gagal menghapus data. Silakan coba lagi.'
       });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDeleteAll = async () => {
+    setIsDeletingAll(true);
+    try {
+      const result = await pelamarService.deleteAllPelamar();
+      
+      // Clear all data
+      setPelamar([]);
+      setTotalEntries(0);
+      
+      setToastMessage({
+        type: 'success',
+        message: `Berhasil menghapus ${result.deleted_count} pelamar dan semua data terkait.`
+      });
+      
+      setIsDeleteAllModalOpen(false);
+    } catch (error) {
+      console.error('Error deleting all pelamar:', error);
+      setToastMessage({
+        type: 'error',
+        message: error instanceof Error ? error.message : 'Gagal menghapus semua data. Silakan coba lagi.'
+      });
+    } finally {
+      setIsDeletingAll(false);
     }
   };
   
@@ -243,6 +294,18 @@ const DataPelamar: React.FC = () => {
     switch (columnId) {
       case 'tanggalLamar':
         return formatDate(item.tanggalLamar);
+      case 'email':
+        return (
+          <a href={`mailto:${item.email}`} className="text-blue-600 hover:text-blue-800">
+            {item.email}
+          </a>
+        );
+      case 'telepon':
+        return (
+          <a href={`tel:${item.telepon}`} className="text-blue-600 hover:text-blue-800">
+            {item.telepon}
+          </a>
+        );
       default:
         return item[columnId as keyof PelamarDisplay];
     }
@@ -279,6 +342,7 @@ const DataPelamar: React.FC = () => {
     <div className="p-6 max-w-full">
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-800">Data Pelamar</h1>
+        <p className="text-gray-600 mt-1">Kelola data pelamar yang mendaftar untuk proses seleksi.</p>
       </div>
       
       {/* Action Bar */}
@@ -294,6 +358,19 @@ const DataPelamar: React.FC = () => {
             }
           >
             Tambah Pelamar
+          </Button>
+
+          <Button 
+            variant="danger" 
+            onClick={handleOpenDeleteAllModal}
+            disabled={pelamar.length === 0}
+            icon={
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+              </svg>
+            }
+          >
+            Hapus Semua
           </Button>
           
           <Button 
@@ -411,7 +488,7 @@ const DataPelamar: React.FC = () => {
       <Modal
         isOpen={isFormModalOpen}
         onClose={() => setIsFormModalOpen(false)}
-        title={currentPelamar ? "Edit Data Pelamar" : "Tambah Data Pelamar"}
+        title={currentPelamar ? "Edit Pelamar" : "Tambah Pelamar"}
       >
         <PelamarForm
           initialData={currentPelamar}
@@ -430,14 +507,16 @@ const DataPelamar: React.FC = () => {
           <div className="space-y-4">
             <div className="flex justify-center mb-4">
               <div className="w-20 h-20 bg-primary-100 rounded-full flex items-center justify-center text-primary-700">
-                <span className="text-2xl font-bold">{currentPelamar.nama.charAt(0)}</span>
+                <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
               </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <h3 className="text-sm font-medium text-gray-500">ID Pelamar</h3>
-                <p className="mt-1 text-sm text-gray-900">{currentPelamar.id}</p>
+                <p className="mt-1 text-sm text-gray-900 font-mono">{currentPelamar.id}</p>
               </div>
               
               <div>
@@ -447,16 +526,24 @@ const DataPelamar: React.FC = () => {
               
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Email</h3>
-                <p className="mt-1 text-sm text-gray-900">{currentPelamar.email}</p>
+                <p className="mt-1 text-sm text-gray-900">
+                  <a href={`mailto:${currentPelamar.email}`} className="text-blue-600 hover:text-blue-800">
+                    {currentPelamar.email}
+                  </a>
+                </p>
               </div>
               
               <div>
                 <h3 className="text-sm font-medium text-gray-500">Nomor Telepon</h3>
-                <p className="mt-1 text-sm text-gray-900">{currentPelamar.telepon}</p>
+                <p className="mt-1 text-sm text-gray-900">
+                  <a href={`tel:${currentPelamar.telepon}`} className="text-blue-600 hover:text-blue-800">
+                    {currentPelamar.telepon}
+                  </a>
+                </p>
               </div>
               
-              <div>
-                <h3 className="text-sm font-medium text-gray-500">Tanggal Daftar</h3>
+              <div className="md:col-span-2">
+                <h3 className="text-sm font-medium text-gray-500">Tanggal Mendaftar</h3>
                 <p className="mt-1 text-sm text-gray-900">{formatDate(currentPelamar.tanggalLamar)}</p>
               </div>
             </div>
@@ -495,6 +582,75 @@ const DataPelamar: React.FC = () => {
           onConfirm={handleDelete}
           onCancel={() => setIsDeleteModalOpen(false)}
         />
+      </Modal>
+
+      {/* Delete All Confirmation Modal */}
+      <Modal
+        isOpen={isDeleteAllModalOpen}
+        onClose={() => setIsDeleteAllModalOpen(false)}
+        title="Konfirmasi Hapus Semua"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center justify-center w-12 h-12 mx-auto bg-red-100 rounded-full">
+            <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 19.5c-.77.833.192 2.5 1.732 2.5z" />
+            </svg>
+          </div>
+          
+          <div className="text-center">
+            <h3 className="text-lg font-medium text-gray-900">Hapus Semua Pelamar?</h3>
+            <div className="mt-2">
+              <p className="text-sm text-gray-500">
+                Anda akan menghapus <span className="font-bold text-red-600">{pelamar.length} pelamar</span> dan semua data terkait termasuk:
+              </p>
+              <ul className="mt-2 text-sm text-gray-500 text-left max-w-xs mx-auto">
+                <li>• Data pelamar</li>
+                <li>• Data perhitungan</li>
+                <li>• Detail perhitungan</li>
+                <li>• Hasil penilaian</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="bg-red-50 border border-red-200 rounded-md p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <svg className="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Peringatan!
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>
+                    Tindakan ini tidak dapat dibatalkan. Semua data akan terhapus secara permanen.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex space-x-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteAllModalOpen(false)}
+              disabled={isDeletingAll}
+              className="flex-1"
+            >
+              Batal
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleDeleteAll}
+              isLoading={isDeletingAll}
+              className="flex-1"
+            >
+              {isDeletingAll ? 'Menghapus...' : 'Ya, Hapus Semua'}
+            </Button>
+          </div>
+        </div>
       </Modal>
       
       {/* Toast Notification */}

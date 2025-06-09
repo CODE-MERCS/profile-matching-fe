@@ -46,6 +46,16 @@ export interface SinglePelamarResponse {
   data: Pelamar;
 }
 
+// Interface untuk delete all response
+export interface DeleteAllPelamarResponse {
+  status: string;
+  message: string;
+  data: {
+    deleted_count: number;
+    affected_tables: string[];
+  };
+}
+
 // Helper function untuk mendapatkan token
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
@@ -217,6 +227,40 @@ export const pelamarService = {
       }
       
       throw new Error(error.response?.data?.message || 'Gagal menghapus pelamar');
+    }
+  },
+
+  // Delete all pelamar
+  async deleteAllPelamar(): Promise<DeleteAllPelamarResponse['data']> {
+    try {
+      console.log('Deleting all pelamar...');
+      
+      const response = await axios.delete<DeleteAllPelamarResponse>(
+        `${API_URL}/pelamar/reset-system`,
+        { headers: getAuthHeaders() }
+      );
+      
+      console.log('Delete all pelamar response:', response.data);
+      
+      if (response.data.status === 'success') {
+        return response.data.data;
+      }
+      
+      throw new Error('Gagal menghapus semua pelamar');
+    } catch (error: any) {
+      console.error('Delete all pelamar error:', error.response?.data || error);
+      
+      if (error.response?.status === 401) {
+        throw new Error('Sesi Anda telah berakhir. Silakan login kembali.');
+      } else if (error.response?.status === 404) {
+        throw new Error('Tidak ada pelamar yang ditemukan');
+      }
+      
+      if (!error.response) {
+        throw new Error('Tidak dapat terhubung ke server. Periksa koneksi internet Anda.');
+      }
+      
+      throw new Error(error.response?.data?.message || 'Gagal menghapus semua pelamar');
     }
   },
 
