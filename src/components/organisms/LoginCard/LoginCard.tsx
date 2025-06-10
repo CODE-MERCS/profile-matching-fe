@@ -1,5 +1,6 @@
 import React from 'react';
 import LoginForm from '../../molecules/LoginForm/LoginForm';
+import logo from '/img/logo33.jpg'; // Sesuaikan path sesuai lokasi file logo
 
 interface LoginCardProps {
   onLogin: (email: string, password: string) => Promise<void>;
@@ -12,10 +13,8 @@ const LoginCard: React.FC<LoginCardProps> = ({ onLogin, error, isLoading }) => {
     <div className="bg-white shadow-md rounded-lg p-6 w-full">
       <div className="text-center mb-8">
         <div className="mb-4 flex justify-center">
-          {/* You can add your logo here */}
-          <div className="w-16 h-16 bg-primary-600 rounded-full flex items-center justify-center">
-            <span className="text-white text-2xl font-bold">PM</span>
-          </div>
+          {/* Ganti dengan logo */}
+          <img src={logo} alt="Logo" className="w-30 h-28 rounded-full" />
         </div>
         <h1 className="text-2xl font-bold text-neutral-900">Profile Matching</h1>
         <p className="text-neutral-600 mt-1">Sign in to your account</p>

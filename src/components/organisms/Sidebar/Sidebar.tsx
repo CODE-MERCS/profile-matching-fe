@@ -1,6 +1,6 @@
-// src/components/organisms/Sidebar/Sidebar.tsx
 import React from 'react';
 import MenuItem from '../../molecules/MenuItem/MenuItem';
+import logo333 from '/img/logo33.jpg'; // Sesuaikan path sesuai lokasi file logo
 
 interface SidebarItem {
   id: string;
@@ -46,7 +46,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         {/* Header */}
         <div className="bg-gradient-to-r from-primary-700 to-primary-600 text-white p-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold">{title}</h2>
+            <div className="flex items-center">
+              <img src={logo333} alt="Logo" className="w-10 h-10 mr-2" />
+              <h2 className="text-xl font-bold">{title}</h2>
+            </div>
             <button 
               onClick={onToggle}
               className="md:hidden text-white focus:outline-none"

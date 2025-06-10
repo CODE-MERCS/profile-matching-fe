@@ -873,30 +873,6 @@ const LihatHasilPerhitungan: React.FC = () => {
             </div>
           </div>
 
-          {/* Conversion Info */}
-          {perhitunganData.conversion_info && (
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <h3 className="text-lg font-medium text-gray-800 mb-4">Konversi Nilai Bobot</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-green-50 border border-green-200 rounded p-3">
-                  <div className="font-medium text-green-800">Sangat Baik</div>
-                  <div className="text-green-600 text-sm">{perhitunganData.conversion_info.sangat_baik}</div>
-                </div>
-                <div className="bg-blue-50 border border-blue-200 rounded p-3">
-                  <div className="font-medium text-blue-800">Baik</div>
-                  <div className="text-blue-600 text-sm">{perhitunganData.conversion_info.baik}</div>
-                </div>
-                <div className="bg-yellow-50 border border-yellow-200 rounded p-3">
-                  <div className="font-medium text-yellow-800">Cukup Baik</div>
-                  <div className="text-yellow-600 text-sm">{perhitunganData.conversion_info.cukup_baik}</div>
-                </div>
-                <div className="bg-red-50 border border-red-200 rounded p-3">
-                  <div className="font-medium text-red-800">Kurang Baik</div>
-                  <div className="text-red-600 text-sm">{perhitunganData.conversion_info.kurang_baik}</div>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* Tahapan Perhitungan Tables */}
           {perhitunganData.tahapan_perhitungan && (
