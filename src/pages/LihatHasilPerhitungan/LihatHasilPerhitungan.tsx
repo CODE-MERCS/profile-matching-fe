@@ -500,6 +500,7 @@ const LihatHasilPerhitungan: React.FC = () => {
         ${generateTabelGap(tahapan)}
         ${generateTabelBobotNilai(tahapan)}
         ${generateTabelCoreFactorSecondaryFactor(tahapan)}
+        ${generateTabelTotalPerhitunganAllKriteria(tahapan)}
         ${generateTabelHasilAkhir(tahapan)}
 
         <!-- Penutup -->
@@ -801,6 +802,126 @@ const LihatHasilPerhitungan: React.FC = () => {
 
     return content;
   };
+
+  // Generate table for total perhitungan all kriteria - HTML Export
+const generateTabelTotalPerhitunganAllKriteria = (tahapan: any) => {
+  const cfSfTableKeys = getCfSfTableKeys();
+  if (cfSfTableKeys.length === 0 || !tahapan?.tabel_7_hasil_akhir) return "";
+
+  // MENGGUNAKAN LOGIKA YANG SAMA DENGAN TABEL HASIL AKHIR
+  const finalResultData = tahapan.tabel_7_hasil_akhir;
+  const sampleRow = finalResultData[0];
+  const nilaiKriteriaColumns = Object.keys(sampleRow).filter(key => 
+    !['nama_pelamar', 'hasil_akhir', 'peringkat'].includes(key)
+  );
+
+  // Collect all CF/SF data for all kriteria
+  const allKriteriaData: any[] = [];
+  const kriteriaNames: string[] = [];
+  
+  cfSfTableKeys.forEach(tableKey => {
+    const tableData = tahapan[tableKey];
+    if (tableData && tableData.length > 0) {
+      const kriteriaName = tableData[0]?.kriteria_name || '';
+      kriteriaNames.push(kriteriaName);
+      
+      // For each pelamar, get CF and SF values
+      tableData.forEach((row: any) => {
+        let existingPelamar = allKriteriaData.find(item => item.nama_pelamar === row.nama_pelamar);
+        if (!existingPelamar) {
+          existingPelamar = { nama_pelamar: row.nama_pelamar };
+          allKriteriaData.push(existingPelamar);
+        }
+        
+        // Add CF and SF for this kriteria
+        existingPelamar[`${kriteriaName}_core_factor`] = row.core_factor;
+        existingPelamar[`${kriteriaName}_secondary_factor`] = row.secondary_factor;
+      });
+    }
+  });
+
+  // Add nilai kriteria from final result data - COPY DATA LANGSUNG
+  finalResultData.forEach((finalRow: any) => {
+    const existingPelamar = allKriteriaData.find(item => item.nama_pelamar === finalRow.nama_pelamar);
+    if (existingPelamar) {
+      nilaiKriteriaColumns.forEach(col => {
+        existingPelamar[col] = finalRow[col];
+      });
+    }
+  });
+
+  if (allKriteriaData.length === 0) return '';
+  
+  return `
+      <div class="section">
+          <div class="section-title">Tabel 7: Total Perhitungan - Semua Kriteria</div>
+          <table class="calculation-table">
+              <thead>
+                  <tr>
+                      <th rowspan="2">Nama Pelamar</th>
+                      ${kriteriaNames.map((kriteriaName, index) => {
+                        const bgColor = getKriteriaColor(index);
+                        return `<th colspan="3" style="background-color: ${bgColor};">${kriteriaName}</th>`;
+                      }).join('')}
+                  </tr>
+                  <tr>
+                      ${kriteriaNames.map((kriteriaName, index) => {
+                        const bgColor = getKriteriaColor(index);
+                        return `
+                          <th style="background-color: ${bgColor}; color: white;">Core Factor</th>
+                          <th style="background-color: ${bgColor}; color: white;">Secondary Factor</th>
+                          <th style="background-color: ${bgColor}; color: white;">N${kriteriaName.toLowerCase().charAt(0)}</th>
+                        `;
+                      }).join('')}
+                  </tr>
+              </thead>
+              <tbody>
+                  ${allKriteriaData.map((row: any) => `
+                      <tr>
+                          <td class="pelamar-name">${row.nama_pelamar}</td>
+                          ${kriteriaNames.map((kriteriaName, index) => {
+                            const bgColor = getLightKriteriaColor(index);
+                            const coreFactorKey = `${kriteriaName}_core_factor`;
+                            const secondaryFactorKey = `${kriteriaName}_secondary_factor`;
+                            
+                            // GUNAKAN LOGIKA YANG SAMA SEPERTI TABEL HASIL AKHIR
+                            // Cari kolom nilai yang sesuai dengan kriteria ini
+                            // Coba beberapa pola matching yang lebih fleksibel
+                            let matchingColumn = nilaiKriteriaColumns.find(col => 
+                              col.toLowerCase().includes(kriteriaName.toLowerCase())
+                            );
+                            
+                            // Jika tidak ditemukan, coba dengan awalan "nilai_"
+                            if (!matchingColumn) {
+                              matchingColumn = nilaiKriteriaColumns.find(col => 
+                                col.toLowerCase().startsWith('nilai_') && 
+                                col.toLowerCase().includes(kriteriaName.toLowerCase().substring(0, 5))
+                              );
+                            }
+                            
+                            // Jika masih tidak ditemukan, coba matching dengan kata kunci utama
+                            if (!matchingColumn) {
+                              const kriteriaKeywords = kriteriaName.toLowerCase().split(' ');
+                              matchingColumn = nilaiKriteriaColumns.find(col => 
+                                kriteriaKeywords.some(keyword => col.toLowerCase().includes(keyword))
+                              );
+                            }
+                            
+                            const nilaiKriteria = matchingColumn ? (row[matchingColumn] || '-') : '-';
+                            
+                            return `
+                              <td style="background-color: ${bgColor}; font-weight: bold;">${row[coreFactorKey] || '-'}</td>
+                              <td style="background-color: ${bgColor}; font-weight: bold;">${row[secondaryFactorKey] || '-'}</td>
+                              <td style="background-color: ${bgColor}; font-weight: bold; color: #1976D2;">${nilaiKriteria}</td>
+                            `;
+                          }).join('')}
+                      </tr>
+                  `).join('')}
+              </tbody>
+          </table>
+      </div>
+  `;
+};
 
   // Generate table for final results - Dynamic kriteria headers
   const generateTabelHasilAkhir = (tahapan: any) => {
@@ -1413,174 +1534,241 @@ const LihatHasilPerhitungan: React.FC = () => {
               })()}
 
               {/* Table 7: Total Perhitungan - Core Factor & Secondary Factor All Kriteria */}
-{(() => {
-  const cfSfTableKeys = getCfSfTableKeys();
-  if (cfSfTableKeys.length === 0 || !perhitunganData.tahapan_perhitungan.tabel_7_hasil_akhir) return null;
+              {(() => {
+                const cfSfTableKeys = getCfSfTableKeys();
+                if (
+                  cfSfTableKeys.length === 0 ||
+                  !perhitunganData.tahapan_perhitungan.tabel_7_hasil_akhir
+                )
+                  return null;
 
-  // MENGGUNAKAN LOGIKA YANG SAMA DENGAN TABEL HASIL AKHIR
-  const finalResultData = perhitunganData.tahapan_perhitungan.tabel_7_hasil_akhir;
-  const sampleRow = finalResultData[0];
-  const nilaiKriteriaColumns = Object.keys(sampleRow).filter(key => 
-    !['nama_pelamar', 'hasil_akhir', 'peringkat'].includes(key)
-  );
-
-  // Collect all CF/SF data for all kriteria
-  const allKriteriaData: any[] = [];
-  const kriteriaNames: string[] = [];
-  
-  cfSfTableKeys.forEach(tableKey => {
-    const tableData = perhitunganData.tahapan_perhitungan[tableKey];
-    if (tableData && tableData.length > 0) {
-      const kriteriaName = tableData[0]?.kriteria_name || '';
-      kriteriaNames.push(kriteriaName);
-      
-      // For each pelamar, get CF and SF values
-      tableData.forEach((row: any) => {
-        let existingPelamar = allKriteriaData.find(item => item.nama_pelamar === row.nama_pelamar);
-        if (!existingPelamar) {
-          existingPelamar = { nama_pelamar: row.nama_pelamar };
-          allKriteriaData.push(existingPelamar);
-        }
-        
-        // Add CF and SF for this kriteria
-        existingPelamar[`${kriteriaName}_core_factor`] = row.core_factor;
-        existingPelamar[`${kriteriaName}_secondary_factor`] = row.secondary_factor;
-      });
-    }
-  });
-
-  // Add nilai kriteria from final result data - COPY DATA LANGSUNG
-  finalResultData.forEach((finalRow: any) => {
-    const existingPelamar = allKriteriaData.find(item => item.nama_pelamar === finalRow.nama_pelamar);
-    if (existingPelamar) {
-      nilaiKriteriaColumns.forEach(col => {
-        existingPelamar[col] = finalRow[col];
-      });
-    }
-  });
-
-  if (allKriteriaData.length === 0) return null;
-
-  return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-200 bg-yellow-50">
-        <h3 className="text-lg font-medium text-yellow-800">
-          Tabel 7: Total Perhitungan - Semua Kriteria
-        </h3>
-        <p className="text-sm text-yellow-600 mt-1">
-          Rangkuman Core Factor dan Secondary Factor untuk semua kriteria
-        </p>
-      </div>
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th rowSpan={2} className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300">
-                Nama Pelamar
-              </th>
-              {kriteriaNames.map((kriteriaName, index) => {
-                const bgColor = getKriteriaColor(index);
-                return (
-                  <th key={kriteriaName} colSpan={3} 
-                      className="px-4 py-2 text-center text-xs font-medium text-white uppercase tracking-wider border-r border-gray-300"
-                      style={{ backgroundColor: bgColor }}>
-                    {kriteriaName}
-                  </th>
+                // MENGGUNAKAN LOGIKA YANG SAMA DENGAN TABEL HASIL AKHIR
+                const finalResultData =
+                  perhitunganData.tahapan_perhitungan.tabel_7_hasil_akhir;
+                const sampleRow = finalResultData[0];
+                const nilaiKriteriaColumns = Object.keys(sampleRow).filter(
+                  (key) =>
+                    !["nama_pelamar", "hasil_akhir", "peringkat"].includes(key)
                 );
-              })}
-            </tr>
-            <tr>
-              {kriteriaNames.map((kriteriaName, index) => {
-                const bgColor = getKriteriaColor(index);
-                return (
-                  <React.Fragment key={`${kriteriaName}-headers`}>
-                    <th className="px-2 py-2 text-center text-xs font-medium text-white uppercase tracking-wider border-r border-gray-200"
-                        style={{ backgroundColor: bgColor }}>
-                      Core Factor
-                    </th>
-                    <th className="px-2 py-2 text-center text-xs font-medium text-white uppercase tracking-wider border-r border-gray-200"
-                        style={{ backgroundColor: bgColor }}>
-                      Secondary Factor
-                    </th>
-                    <th className="px-2 py-2 text-center text-xs font-medium text-white uppercase tracking-wider border-r border-gray-200"
-                        style={{ backgroundColor: bgColor }}>
-                      N{kriteriaName.toLowerCase().charAt(0)}
-                    </th>
-                  </React.Fragment>
-                );
-              })}
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {allKriteriaData.map((row: any, index: number) => (
-              <tr key={index} className="hover:bg-gray-50">
-                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 bg-green-50 border-r border-gray-300">
-                  {row.nama_pelamar}
-                </td>
-                {kriteriaNames.map((kriteriaName, kriteriaIndex) => {
-                  const bgColor = getLightKriteriaColor(kriteriaIndex);
-                  const coreFactorKey = `${kriteriaName}_core_factor`;
-                  const secondaryFactorKey = `${kriteriaName}_secondary_factor`;
-                  
-                  return (
-                    <React.Fragment key={`${row.nama_pelamar}-${kriteriaName}`}>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-center font-medium border-r border-gray-200"
-                          style={{ backgroundColor: bgColor }}>
-                        {row[coreFactorKey] || '-'}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-center font-medium border-r border-gray-200"
-                          style={{ backgroundColor: bgColor }}>
-                        {row[secondaryFactorKey] || '-'}
-                      </td>
-                      <td className="px-2 py-3 whitespace-nowrap text-sm text-center font-bold text-blue-600 border-r border-gray-200"
-                          style={{ backgroundColor: bgColor }}>
-                        {/* GUNAKAN LOGIKA YANG SAMA SEPERTI TABEL HASIL AKHIR */}
-                        {(() => {
-                          // Cari kolom nilai yang sesuai dengan kriteria ini
-                          // Coba beberapa pola matching yang lebih fleksibel
-                          let matchingColumn = nilaiKriteriaColumns.find(col => 
-                            col.toLowerCase().includes(kriteriaName.toLowerCase())
-                          );
-                          
-                          // Jika tidak ditemukan, coba dengan awalan "nilai_"
-                          if (!matchingColumn) {
-                            matchingColumn = nilaiKriteriaColumns.find(col => 
-                              col.toLowerCase().startsWith('nilai_') && 
-                              col.toLowerCase().includes(kriteriaName.toLowerCase().substring(0, 5))
-                            );
-                          }
-                          
-                          // Jika masih tidak ditemukan, coba matching dengan kata kunci utama
-                          if (!matchingColumn) {
-                            const kriteriaKeywords = kriteriaName.toLowerCase().split(' ');
-                            matchingColumn = nilaiKriteriaColumns.find(col => 
-                              kriteriaKeywords.some(keyword => col.toLowerCase().includes(keyword))
-                            );
-                          }
-                          
-                          console.log(`Kriteria: ${kriteriaName}, Available columns:`, nilaiKriteriaColumns, `Matched: ${matchingColumn}`);
-                          
-                          return matchingColumn ? (row[matchingColumn] || '-') : '-';
-                        })()}
-                      </td>
-                    </React.Fragment>
+
+                // Collect all CF/SF data for all kriteria
+                const allKriteriaData: any[] = [];
+                const kriteriaNames: string[] = [];
+
+                cfSfTableKeys.forEach((tableKey) => {
+                  const tableData =
+                    perhitunganData.tahapan_perhitungan[tableKey];
+                  if (tableData && tableData.length > 0) {
+                    const kriteriaName = tableData[0]?.kriteria_name || "";
+                    kriteriaNames.push(kriteriaName);
+
+                    // For each pelamar, get CF and SF values
+                    tableData.forEach((row: any) => {
+                      let existingPelamar = allKriteriaData.find(
+                        (item) => item.nama_pelamar === row.nama_pelamar
+                      );
+                      if (!existingPelamar) {
+                        existingPelamar = { nama_pelamar: row.nama_pelamar };
+                        allKriteriaData.push(existingPelamar);
+                      }
+
+                      // Add CF and SF for this kriteria
+                      existingPelamar[`${kriteriaName}_core_factor`] =
+                        row.core_factor;
+                      existingPelamar[`${kriteriaName}_secondary_factor`] =
+                        row.secondary_factor;
+                    });
+                  }
+                });
+
+                // Add nilai kriteria from final result data - COPY DATA LANGSUNG
+                finalResultData.forEach((finalRow: any) => {
+                  const existingPelamar = allKriteriaData.find(
+                    (item) => item.nama_pelamar === finalRow.nama_pelamar
                   );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-})()}
+                  if (existingPelamar) {
+                    nilaiKriteriaColumns.forEach((col) => {
+                      existingPelamar[col] = finalRow[col];
+                    });
+                  }
+                });
 
-              {/* Table 7: Hasil Akhir - Dynamic Headers */}
+                if (allKriteriaData.length === 0) return null;
+
+                return (
+                  <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-200 bg-yellow-50">
+                      <h3 className="text-lg font-medium text-yellow-800">
+                        Tabel 7: Total Perhitungan - Semua Kriteria
+                      </h3>
+                      <p className="text-sm text-yellow-600 mt-1">
+                        Rangkuman Core Factor dan Secondary Factor untuk semua
+                        kriteria
+                      </p>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th
+                              rowSpan={2}
+                              className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-r border-gray-300"
+                            >
+                              Nama Pelamar
+                            </th>
+                            {kriteriaNames.map((kriteriaName, index) => {
+                              const bgColor = getKriteriaColor(index);
+                              return (
+                                <th
+                                  key={kriteriaName}
+                                  colSpan={3}
+                                  className="px-4 py-2 text-center text-xs font-medium text-white uppercase tracking-wider border-r border-gray-300"
+                                  style={{ backgroundColor: bgColor }}
+                                >
+                                  {kriteriaName}
+                                </th>
+                              );
+                            })}
+                          </tr>
+                          <tr>
+                            {kriteriaNames.map((kriteriaName, index) => {
+                              const bgColor = getKriteriaColor(index);
+                              return (
+                                <React.Fragment key={`${kriteriaName}-headers`}>
+                                  <th
+                                    className="px-2 py-2 text-center text-xs font-medium text-white uppercase tracking-wider border-r border-gray-200"
+                                    style={{ backgroundColor: bgColor }}
+                                  >
+                                    Core Factor
+                                  </th>
+                                  <th
+                                    className="px-2 py-2 text-center text-xs font-medium text-white uppercase tracking-wider border-r border-gray-200"
+                                    style={{ backgroundColor: bgColor }}
+                                  >
+                                    Secondary Factor
+                                  </th>
+                                  <th
+                                    className="px-2 py-2 text-center text-xs font-medium text-white uppercase tracking-wider border-r border-gray-200"
+                                    style={{ backgroundColor: bgColor }}
+                                  >
+                                    N{kriteriaName.toLowerCase().charAt(0)}
+                                  </th>
+                                </React.Fragment>
+                              );
+                            })}
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {allKriteriaData.map((row: any, index: number) => (
+                            <tr key={index} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 bg-green-50 border-r border-gray-300">
+                                {row.nama_pelamar}
+                              </td>
+                              {kriteriaNames.map(
+                                (kriteriaName, kriteriaIndex) => {
+                                  const bgColor =
+                                    getLightKriteriaColor(kriteriaIndex);
+                                  const coreFactorKey = `${kriteriaName}_core_factor`;
+                                  const secondaryFactorKey = `${kriteriaName}_secondary_factor`;
+
+                                  return (
+                                    <React.Fragment
+                                      key={`${row.nama_pelamar}-${kriteriaName}`}
+                                    >
+                                      <td
+                                        className="px-2 py-3 whitespace-nowrap text-sm text-center font-medium border-r border-gray-200"
+                                        style={{ backgroundColor: bgColor }}
+                                      >
+                                        {row[coreFactorKey] || "-"}
+                                      </td>
+                                      <td
+                                        className="px-2 py-3 whitespace-nowrap text-sm text-center font-medium border-r border-gray-200"
+                                        style={{ backgroundColor: bgColor }}
+                                      >
+                                        {row[secondaryFactorKey] || "-"}
+                                      </td>
+                                      <td
+                                        className="px-2 py-3 whitespace-nowrap text-sm text-center font-bold text-blue-600 border-r border-gray-200"
+                                        style={{ backgroundColor: bgColor }}
+                                      >
+                                        {/* GUNAKAN LOGIKA YANG SAMA SEPERTI TABEL HASIL AKHIR */}
+                                        {(() => {
+                                          // Cari kolom nilai yang sesuai dengan kriteria ini
+                                          // Coba beberapa pola matching yang lebih fleksibel
+                                          let matchingColumn =
+                                            nilaiKriteriaColumns.find((col) =>
+                                              col
+                                                .toLowerCase()
+                                                .includes(
+                                                  kriteriaName.toLowerCase()
+                                                )
+                                            );
+
+                                          // Jika tidak ditemukan, coba dengan awalan "nilai_"
+                                          if (!matchingColumn) {
+                                            matchingColumn =
+                                              nilaiKriteriaColumns.find(
+                                                (col) =>
+                                                  col
+                                                    .toLowerCase()
+                                                    .startsWith("nilai_") &&
+                                                  col
+                                                    .toLowerCase()
+                                                    .includes(
+                                                      kriteriaName
+                                                        .toLowerCase()
+                                                        .substring(0, 5)
+                                                    )
+                                              );
+                                          }
+
+                                          // Jika masih tidak ditemukan, coba matching dengan kata kunci utama
+                                          if (!matchingColumn) {
+                                            const kriteriaKeywords =
+                                              kriteriaName
+                                                .toLowerCase()
+                                                .split(" ");
+                                            matchingColumn =
+                                              nilaiKriteriaColumns.find((col) =>
+                                                kriteriaKeywords.some(
+                                                  (keyword) =>
+                                                    col
+                                                      .toLowerCase()
+                                                      .includes(keyword)
+                                                )
+                                              );
+                                          }
+
+                                          console.log(
+                                            `Kriteria: ${kriteriaName}, Available columns:`,
+                                            nilaiKriteriaColumns,
+                                            `Matched: ${matchingColumn}`
+                                          );
+
+                                          return matchingColumn
+                                            ? row[matchingColumn] || "-"
+                                            : "-";
+                                        })()}
+                                      </td>
+                                    </React.Fragment>
+                                  );
+                                }
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* Table 8: Hasil Akhir - Dynamic Headers */}
               {perhitunganData.tahapan_perhitungan.tabel_7_hasil_akhir && (
                 <div className="bg-white rounded-lg shadow-sm overflow-hidden">
                   <div className="px-6 py-4 border-b border-gray-200 bg-green-50">
                     <h3 className="text-lg font-medium text-green-800">
-                      Tabel 7: Hasil Akhir Perhitungan
+                      Tabel 8: Hasil Akhir Perhitungan
                     </h3>
                     <p className="text-sm text-green-600 mt-1">
                       Hasil akhir berdasarkan bobot kriteria yang telah
