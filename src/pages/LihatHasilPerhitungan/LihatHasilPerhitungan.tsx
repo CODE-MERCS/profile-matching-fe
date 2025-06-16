@@ -938,7 +938,7 @@ const generateTabelTotalPerhitunganAllKriteria = (tahapan: any) => {
 
     return `
         <div class="section">
-            <div class="section-title">Tabel 7: Hasil Akhir Perhitungan</div>
+            <div class="section-title">Tabel 8: Hasil Akhir Perhitungan</div>
             <table class="calculation-table">
                 <thead>
                     <tr>
