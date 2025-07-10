@@ -971,7 +971,7 @@ const generateTabelTotalPerhitunganAllKriteria = (tahapan: any) => {
                               .join("")}
                             <td style="font-weight: bold; color: #1976D2;">${
                               typeof row.hasil_akhir === "number"
-                                ? row.hasil_akhir.toFixed(3)
+                                ? row.hasil_akhir
                                 : row.hasil_akhir
                             }</td>
                             <td>${row.peringkat || index + 1}</td>
@@ -1862,7 +1862,7 @@ const generateTabelTotalPerhitunganAllKriteria = (tahapan: any) => {
                                     }`}
                                   >
                                     {typeof row.hasil_akhir === "number"
-                                      ? row.hasil_akhir.toFixed(3)
+                                      ? row.hasil_akhir
                                       : row.hasil_akhir}
                                   </span>
                                 </td>

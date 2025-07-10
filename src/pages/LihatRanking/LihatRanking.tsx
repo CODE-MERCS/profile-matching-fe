@@ -417,7 +417,7 @@ const LihatRanking: React.FC = () => {
                               }</strong></td>`
                           )
                           .join("")}
-                        <td><strong>${item.hasil_akhir.toFixed(3)}</strong></td>
+                        <td><strong>${item.hasil_akhir}</strong></td>
                     </tr>
                   `;
                   })
@@ -788,7 +788,7 @@ const LihatRanking: React.FC = () => {
                           ))}
                           <td className="px-6 py-4 whitespace-nowrap">
                             <div className="text-sm font-bold text-blue-600">
-                              {item.hasil_akhir.toFixed(3)}
+                              {item.hasil_akhir}
                             </div>
                           </td>
                         </tr>
@@ -822,9 +822,7 @@ const LihatRanking: React.FC = () => {
                   </div>
                   <div className="text-right">
                     <div className="text-2xl font-bold text-green-600">
-                      {rankingData.ranking_details[0].final_calculation.score.toFixed(
-                        3
-                      )}
+                      {rankingData.ranking_details[0].final_calculation.score}
                     </div>
                     <div className="text-sm text-green-500">Skor Akhir</div>
                   </div>
